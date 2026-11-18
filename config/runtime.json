@@ -1,0 +1,33 @@
+{
+  "schema_version": 2,
+  "project": {
+    "name": "multi-star-project",
+    "root": "."
+  },
+  "runtime": {
+    "root": "runtime",
+    "wsl_root": "runtime/wsl/multi-star-sim",
+    "wsl_distribution": "multi-star-sim",
+    "base_distribution": "Ubuntu-24.04",
+    "base_image_url": "https://releases.ubuntu.com/24.04.5/ubuntu-24.04.5-wsl-amd64.wsl",
+    "base_image_sha256": "bb415d824822c4b878125729af451a5d18fb13d1cf5cbed9a7393ad64ac6039e",
+    "docker_context": "multi-star-sim",
+    "cluster_name": "multi-star-sim",
+    "registry_name": "registry.localhost",
+    "registry_host_port": 5001,
+    "kubeapi_host_port": 6443,
+    "dashboard_port": 18082
+  },
+  "versions": {
+    "k3d": "v5.9.0",
+    "k3s_release": "v1.37.2+k3s1",
+    "k3s_image": "rancher/k3s:v1.37.2-k3s1",
+    "kubectl": "v1.37.2",
+    "python_base_image": "python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b",
+    "numpy": "2.5.5"
+  },
+  "storage_policy": {
+    "runtime_data_inside_project": true,
+    "runtime_tracked_in_git": false
+  }
+}

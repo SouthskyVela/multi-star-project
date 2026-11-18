@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multi-Star 主控态势面板</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d12;
+      --panel: #10161d;
+      --panel-alt: #0c1218;
+      --border: #273340;
+      --text: #dce5ec;
+      --muted: #8c9aa8;
+      --accent: #63c7d5;
+      --healthy: #65d6a6;
+      --fault: #ff6b6b;
+      --warning: #f4d35e;
+      --selected: #f4d35e;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.5;
+    }
+
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: wait; opacity: 0.55; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-kicker {
+      margin: 0 0 2px;
+      color: var(--accent);
+      font: 11px/1.4 Consolas, monospace;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 { margin: 0; font-size: 21px; font-weight: 600; }
+
+    #connection-status {
+      flex: 0 0 auto;
+      padding: 5px 10px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--muted);
+      font: 12px Consolas, monospace;
+    }
+
+    #connection-status[data-state="online"] { color: var(--healthy); border-color: #2f6854; }
+    #connection-status[data-state="error"] { color: var(--fault); border-color: #7c3e46; }
+    #connection-status[data-state="waiting"] { color: var(--warning); }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(110px, 1fr));
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-alt);
+    }
+
+    .summary-item { padding: 12px 18px; border-right: 1px solid var(--border); }
+    .summary-item:last-child { border-right: 0; }
+    .summary-label { display: block; color: var(--muted); font-size: 11px; letter-spacing: 0.06em; }
+    .summary-value { display: block; margin-top: 3px; font: 600 15px Consolas, monospace; overflow-wrap: anywhere; }
+
+    #error-banner {
+      margin: 14px 20px 0;
+      padding: 10px 14px;
+      border: 1px solid #7c3e46;
+      background: #25151a;
+      color: #ffb3b3;
+      font-size: 13px;
+    }
+
+    #waiting-banner {
+      margin: 14px 20px 0;
+      padding: 10px 14px;
+      border: 1px solid #655d32;
+      background: #211f13;
+      color: #f4df87;
+      font-size: 13px;
+    }
+
+    .usage-guide {
+      margin: 14px 20px 0;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--panel-alt);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .usage-guide summary { color: var(--text); cursor: pointer; }
+    .usage-guide ul { margin: 9px 0 0; padding-left: 20px; }
+    .usage-guide li + li { margin-top: 5px; }
+
+    main {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+      padding: 16px 20px 24px;
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .panel-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 49px;
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-header h2 { margin: 0; font-size: 14px; font-weight: 600; }
+    .panel-meta { color: var(--muted); font: 11px Consolas, monospace; text-align: right; }
+    .panel-body { padding: 14px 15px; }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 290px;
+      background: #0b1117;
+      border: 1px solid #202c37;
+    }
+
+    #satellite-canvas { cursor: crosshair; }
+    #satellite-canvas:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+    #satellite-selection { min-height: 20px; margin-top: 9px; color: var(--muted); font-size: 12px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .swatch { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .healthy { color: var(--healthy); }
+    .fault { color: var(--fault); }
+    .unknown { color: var(--muted); }
+    .selected { color: var(--selected); }
+    .original { color: var(--accent); }
+    .conjugate { color: #d693e8; }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .metric { padding: 17px 14px; background: var(--panel-alt); }
+    .metric-label { display: block; color: var(--muted); font-size: 12px; }
+    .metric-value { display: block; margin-top: 6px; color: var(--accent); font: 600 23px Consolas, monospace; overflow-wrap: anywhere; }
+    .metrics-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+
+    .mode-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mode-button {
+      padding: 8px 12px;
+      border: 1px solid #354452;
+      border-radius: 3px;
+      background: #151e27;
+      color: var(--text);
+      font: 12px Consolas, monospace;
+    }
+    .mode-button:hover { border-color: var(--accent); }
+    .mode-button.active { border-color: var(--accent); background: #153039; color: #9debf4; }
+    .mode-button:focus-visible, input:focus-visible, select:focus-visible, .submit-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .control-status { min-height: 20px; margin: 8px 0 17px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .control-status.error, #event-status.error { color: #ffb3b3; }
+    .control-status.success, #event-status.success { color: var(--healthy); }
+    .operation-block { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .operation-block h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; }
+    .operation-note { margin: 8px 0; color: var(--muted); font-size: 11px; }
+    .fault-controls, .file-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+    .fault-controls label { display: grid; gap: 4px; color: var(--muted); font: 11px Consolas, monospace; }
+    select, input[type="file"] {
+      min-height: 36px;
+      padding: 7px 8px;
+      border: 1px solid #354452;
+      border-radius: 3px;
+      background: #0b1117;
+      color: var(--text);
+    }
+    input[type="file"] { width: 100%; }
+    .sample-link { display: inline-block; margin-top: 9px; color: var(--accent); }
+    #file-preview {
+      min-height: 54px;
+      margin: 10px 0 0;
+      padding: 9px 10px;
+      border: 1px solid var(--border);
+      background: #0b1117;
+      color: #b9c8d4;
+      font: 11px/1.6 Consolas, monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    fieldset { margin: 0; padding: 0; border: 0; }
+    legend { margin-bottom: 10px; color: var(--text); font-size: 13px; font-weight: 600; }
+    .form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .field { min-width: 0; }
+    .field.wide { grid-column: span 2; }
+    .field label { display: block; margin-bottom: 4px; color: var(--muted); font: 11px Consolas, monospace; }
+    .field input {
+      width: 100%;
+      min-height: 36px;
+      padding: 7px 8px;
+      border: 1px solid #354452;
+      border-radius: 3px;
+      background: #0b1117;
+      color: var(--text);
+    }
+    .submit-button {
+      margin-top: 13px;
+      padding: 8px 16px;
+      border: 1px solid #408b96;
+      border-radius: 3px;
+      background: #153039;
+      color: #b5f2f8;
+    }
+    #event-status { display: inline-block; min-height: 20px; margin-left: 10px; color: var(--muted); font-size: 12px; }
+
+    .event-log {
+      height: 320px;
+      margin: 0;
+      padding: 10px 14px;
+      overflow: auto;
+      list-style: none;
+      background: #080d12;
+      color: #b9c8d4;
+      font: 12px/1.65 Consolas, "Courier New", monospace;
+    }
+    .event-log li { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 10px; padding: 4px 0; border-bottom: 1px solid #17212a; }
+    .event-seq { color: var(--accent); }
+    .event-message { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .event-empty { display: block !important; color: var(--muted); border-bottom: 0 !important; }
+
+    .synthetic-label { color: var(--warning); }
+    .footnote { margin: 9px 0 0; color: var(--muted); font-size: 11px; }
+
+    @media (max-width: 1050px) {
+      .summary { grid-template-columns: repeat(3, 1fr); }
+      .summary-item:nth-child(3) { border-right: 0; }
+      .summary-item:nth-child(-n+3) { border-bottom: 1px solid var(--border); }
+      .span-4, .span-5, .span-7, .span-8 { grid-column: span 12; }
+      .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 600px) {
+      .topbar { align-items: flex-start; padding: 15px; }
+      h1 { font-size: 18px; }
+      .summary { grid-template-columns: repeat(2, 1fr); }
+      .summary-item { border-bottom: 1px solid var(--border); }
+      .summary-item:nth-child(odd) { border-right: 1px solid var(--border); }
+      .summary-item:nth-child(even) { border-right: 0; }
+      main { padding: 12px; gap: 12px; }
+      #error-banner, #waiting-banner, .usage-guide { margin: 10px 12px 0; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.wide { grid-column: span 1; }
+      canvas { height: 250px; }
+      #event-status { display: block; margin: 8px 0 0; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="brand-kicker">Multi-Star Control</p>
+      <h1>主控态势面板</h1>
+    </div>
+    <span id="connection-status" data-state="waiting" role="status">等待真实快照</span>
+  </header>
+
+  <section class="summary" aria-label="主控状态">
+    <div class="summary-item"><span class="summary-label">主控 ID</span><span class="summary-value" id="leader-id">—</span></div>
+    <div class="summary-item"><span class="summary-label">EPOCH</span><span class="summary-value" id="leader-epoch">—</span></div>
+    <div class="summary-item"><span class="summary-label">PLAN VERSION</span><span class="summary-value" id="plan-version">—</span></div>
+    <div class="summary-item"><span class="summary-label">模式</span><span class="summary-value" id="mode-value">—</span></div>
+    <div class="summary-item"><span class="summary-label">仿真时间</span><span class="summary-value" id="simulation-time">—</span></div>
+    <div class="summary-item"><span class="summary-label">最近快照</span><span class="summary-value" id="last-update">尚未接收</span></div>
+  </section>
+
+  <div id="error-banner" role="alert" hidden></div>
+  <div id="waiting-banner" role="status">正在连接主控并等待真实快照，当前不显示模拟观测数据。</div>
+
+  <details class="usage-guide">
+    <summary>使用说明</summary>
+    <ul>
+      <li>小星故障区可注入或恢复所选卫星故障，健康状态与阵列变化以随后 1 秒真实快照为准；主控按钮只暂停当前主控 22 秒以测试切换，并非永久 crash。</li>
+      <li>事件表单与 CSV/JSON 文件均提交 event_id、target_id、频率、通量、置信度、谱指数和有效期；文件导入是事件/调度测试，不是 FITS 高保真天空输入。</li>
+      <li>SURVEY 用于巡天调度，FIXED_SOURCE 用于固定源观测，CALIBRATION 用于校准；模式与事件处理结果以真实响应和快照为准。</li>
+    </ul>
+  </details>
+
+  <main>
+    <section class="panel span-7" aria-labelledby="satellite-title">
+      <div class="panel-header">
+        <h2 id="satellite-title">小卫星相对位置 · 等轴测</h2>
+        <span class="panel-meta" id="satellite-count">等待快照</span>
+      </div>
+      <div class="panel-body">
+        <canvas id="satellite-canvas" tabindex="0" role="img" aria-label="九颗小卫星的等轴测相对位置，可点击选择卫星">等待真实快照</canvas>
+        <div class="legend" aria-label="卫星图例">
+          <span class="legend-item healthy"><span class="swatch"></span>健康</span>
+          <span class="legend-item fault"><span class="swatch"></span>故障</span>
+          <span class="legend-item unknown"><span class="swatch"></span>未知</span>
+          <span class="legend-item selected"><span class="swatch"></span>选中</span>
+        </div>
+        <div id="satellite-selection">点击卫星查看 ID、健康状态和任务状态。</div>
+      </div>
+    </section>
+
+    <section class="panel span-5" aria-labelledby="uv-title">
+      <div class="panel-header">
+        <h2 id="uv-title">UV 覆盖 · 共轭点</h2>
+        <span class="panel-meta" id="uv-count">等待快照</span>
+      </div>
+      <div class="panel-body">
+        <canvas id="uv-canvas" role="img" aria-label="快照 UV 覆盖及其共轭点">等待真实快照</canvas>
+        <div class="legend" aria-label="UV 图例">
+          <span class="legend-item original"><span class="swatch"></span>(u, v)</span>
+          <span class="legend-item conjugate"><span class="swatch"></span>(−u, −v)</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel span-5" aria-labelledby="psf-title">
+      <div class="panel-header">
+        <h2 id="psf-title">点扩散函数 · PSF</h2>
+        <span class="panel-meta" id="psf-meta">线性灰度</span>
+      </div>
+      <div class="panel-body">
+        <canvas id="psf-canvas" role="img" aria-label="由真实二维 PSF 数值矩阵渲染的图像">等待真实快照</canvas>
+        <p class="footnote">像素强度直接来自快照二维矩阵；不加载预制图像。</p>
+      </div>
+    </section>
+
+    <section class="panel span-7" aria-labelledby="spectrum-title">
+      <div class="panel-header">
+        <h2 id="spectrum-title">输入测试频谱</h2>
+        <span class="panel-meta synthetic-label">SYNTHETIC INPUT · 非快照实测</span>
+      </div>
+      <div class="panel-body">
+        <canvas id="spectrum-canvas" role="img" aria-label="根据事件输入频率、通量及谱指数生成的合成测试频谱">等待事件参数输入</canvas>
+        <p class="footnote">第二点在 2 × 输入频率处按 F₂ = F₁ × 2^α 计算；两点均为 synthetic input，仅用于输入预览。</p>
+      </div>
+    </section>
+
+    <section class="panel span-4" aria-labelledby="metrics-title">
+      <div class="panel-header">
+        <h2 id="metrics-title">关键指标</h2>
+        <span class="panel-meta">来自 metrics</span>
+      </div>
+      <div class="panel-body">
+        <div class="metrics-grid">
+          <div class="metric"><span class="metric-label">基线数</span><span class="metric-value" id="metric-baselines">—</span></div>
+          <div class="metric"><span class="metric-label">UV 覆盖</span><span class="metric-value" id="metric-coverage">—</span></div>
+          <div class="metric"><span class="metric-label">最大旁瓣</span><span class="metric-value" id="metric-sidelobe">—</span></div>
+          <div class="metric"><span class="metric-label">FWHM</span><span class="metric-value" id="metric-fwhm">—</span></div>
+        </div>
+        <p class="metrics-note">字段缺失时显示“—”，不使用估算值补齐。</p>
+      </div>
+    </section>
+
+    <section class="panel span-8" aria-labelledby="controls-title">
+      <div class="panel-header">
+        <h2 id="controls-title">主控指令</h2>
+        <span class="panel-meta">POST JSON</span>
+      </div>
+      <div class="panel-body">
+        <div class="mode-controls" role="group" aria-label="切换观测模式">
+          <button class="mode-button" type="button" data-mode="SURVEY">SURVEY</button>
+          <button class="mode-button" type="button" data-mode="FIXED_SOURCE">FIXED_SOURCE</button>
+          <button class="mode-button" type="button" data-mode="CALIBRATION">CALIBRATION</button>
+        </div>
+        <div class="control-status" id="mode-status" role="status">模式状态以最新快照为准。</div>
+
+        <div class="operation-block" aria-labelledby="fault-title">
+          <h3 id="fault-title">小星故障操作</h3>
+          <div class="fault-controls">
+            <label for="fault-satellite">satellite_id
+              <select id="fault-satellite">
+                <option value="small-sat-0">small-sat-0</option>
+                <option value="small-sat-1">small-sat-1</option>
+                <option value="small-sat-2">small-sat-2</option>
+                <option value="small-sat-3">small-sat-3</option>
+                <option value="small-sat-4">small-sat-4</option>
+                <option value="small-sat-5">small-sat-5</option>
+                <option value="small-sat-6">small-sat-6</option>
+                <option value="small-sat-7">small-sat-7</option>
+                <option value="small-sat-8">small-sat-8</option>
+              </select>
+            </label>
+            <button class="mode-button" id="fault-inject" type="button">注入故障</button>
+            <button class="mode-button" id="fault-recover" type="button">恢复故障</button>
+          </div>
+          <div class="control-status" id="fault-status" role="status">故障操作结果与后续快照将在此反映。</div>
+        </div>
+
+        <div class="operation-block" aria-labelledby="main-fault-title">
+          <h3 id="main-fault-title">主控故障测试</h3>
+          <button class="mode-button" id="main-suspend" type="button">暂停当前主控 22 秒（测试切换）</button>
+          <div class="control-status" id="main-status" role="status">临时暂停不代表永久 crash，切换结果以真实快照为准。</div>
+        </div>
+
+        <form id="event-form">
+          <fieldset>
+            <legend>提交观测事件</legend>
+            <div class="form-grid">
+              <div class="field"><label for="event-id">event_id</label><input id="event-id" name="event_id" type="text" required autocomplete="off"></div>
+              <div class="field"><label for="target-id">target_id</label><input id="target-id" name="target_id" type="text" required autocomplete="off"></div>
+              <div class="field"><label for="frequency-hz">frequency_hz</label><input id="frequency-hz" name="frequency_hz" type="number" min="0" step="any" required></div>
+              <div class="field"><label for="flux-jy">flux_jy</label><input id="flux-jy" name="flux_jy" type="number" min="0" step="any" required></div>
+              <div class="field"><label for="confidence">confidence</label><input id="confidence" name="confidence" type="number" min="0" max="1" step="any" required></div>
+              <div class="field"><label for="spectral-index">spectral_index</label><input id="spectral-index" name="spectral_index" type="number" step="any" required></div>
+              <div class="field"><label for="expiry-s">expiry_s</label><input id="expiry-s" name="expiry_s" type="number" min="0" step="any" required></div>
+            </div>
+            <button class="submit-button" id="event-submit" type="submit">提交事件</button>
+            <span id="event-status" role="status"></span>
+          </fieldset>
+        </form>
+
+        <div class="operation-block" aria-labelledby="file-title">
+          <h3 id="file-title">测试事件文件</h3>
+          <p class="operation-note">CSV 或 JSON 最多 1 MiB、100 条；仅用于事件/调度测试，不是 FITS 高保真天空输入。</p>
+          <p class="operation-note">CSV 表头：event_id,target_id,frequency_hz,flux_jy,confidence,spectral_index,expiry_s</p>
+          <div class="field">
+            <label for="event-file">选择 .csv 或 .json 文件</label>
+            <input id="event-file" type="file" accept=".csv,.json">
+          </div>
+          <div class="file-controls">
+            <button class="submit-button" id="file-load" type="button">解析文件</button>
+            <button class="submit-button" id="file-inject" type="button" disabled>顺序注入事件</button>
+          </div>
+          <a class="sample-link" href="/sample-events.csv" download>下载示例 CSV</a>
+          <pre id="file-preview">尚未解析文件。</pre>
+          <div class="control-status" id="file-status" role="status">解析成功后才能注入，注入统计来自每条真实响应。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel span-12" aria-labelledby="events-title">
+      <div class="panel-header">
+        <h2 id="events-title">主控事件终端</h2>
+        <span class="panel-meta" id="event-count">按 seq 倒序</span>
+      </div>
+      <ol class="event-log" id="event-log" aria-live="polite">
+        <li class="event-empty">等待真实快照中的主控切换、模式与任务事件。</li>
+      </ol>
+    </section>
+  </main>
+
+  <noscript>此面板需要启用 JavaScript 才能获取主控快照。</noscript>
+
+  <script>
+    'use strict';
+
+    const SNAPSHOT_PATH = '/api/snapshot';
+    const MODE_PATH = '/mode';
+    const EVENTS_PATH = '/events';
+    const FAULT_PATH = '/small-sat/fault';
+    const RECOVER_PATH = '/small-sat/recover';
+    const SUSPEND_PATH = '/test/suspend';
+    const MAX_FILE_BYTES = 1024 * 1024;
+    const MAX_FILE_EVENTS = 100;
+    const EVENT_FIELDS = ['event_id', 'target_id', 'frequency_hz', 'flux_jy', 'confidence', 'spectral_index', 'expiry_s'];
+    const NUMERIC_EVENT_FIELDS = ['frequency_hz', 'flux_jy', 'confidence', 'spectral_index', 'expiry_s'];
+    const state = {
+      snapshot: null,
+      hasSnapshot: false,
+      fetching: false,
+      selectedSatelliteId: null,
+      satellitePlotPoints: [],
+      events: new Map(),
+      fileEvents: [],
+      fileName: ''
+    };
+
+    const byId = (id) => document.getElementById(id);
+    const finite = (value) => typeof value === 'number' && Number.isFinite(value);
+
+    function formatNumber(value, maximumFractionDigits = 4) {
+      if (!finite(value)) return '—';
+      if (value !== 0 && (Math.abs(value) >= 100000 || Math.abs(value) < 0.001)) {
+        return value.toExponential(3);
+      }
+      return value.toLocaleString('zh-CN', { maximumFractionDigits });
+    }
+
+    function displayValue(value) {
+      return value === null || value === undefined || value === '' ? '—' : String(value);
+    }
+
+    function prepareCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(1, rect.width);
+      const height = Math.max(1, rect.height);
+      const ratio = window.devicePixelRatio || 1;
+      const pixelWidth = Math.round(width * ratio);
+      const pixelHeight = Math.round(height * ratio);
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+      }
+      const context = canvas.getContext('2d');
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = '#0b1117';
+      context.fillRect(0, 0, width, height);
+      context.lineWidth = 1;
+      return { context, width, height };
+    }
+
+    function drawCanvasMessage(canvas, message) {
+      const { context, width, height } = prepareCanvas(canvas);
+      context.fillStyle = '#8c9aa8';
+      context.font = '13px Consolas, monospace';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(message, width / 2, height / 2, Math.max(10, width - 30));
+    }
+
+    function healthState(health) {
+      if (typeof health === 'boolean') return health ? 'healthy' : 'fault';
+      if (finite(health)) return health > 0 ? 'healthy' : 'fault';
+      const value = String(health ?? '').toLowerCase();
+      if (['healthy', 'ok', 'nominal', 'online', 'active', 'good'].includes(value)) return 'healthy';
+      if (['fault', 'failed', 'failure', 'unhealthy', 'offline', 'dead', 'critical', 'bad'].includes(value)) return 'fault';
+      return 'unknown';
+    }
+
+    function satelliteColor(satellite) {
+      if (String(satellite.id) === String(state.selectedSatelliteId)) return '#f4d35e';
+      const health = healthState(satellite.health);
+      return health === 'healthy' ? '#65d6a6' : health === 'fault' ? '#ff6b6b' : '#8c9aa8';
+    }
+
+    function updateSatelliteSelection() {
+      const output = byId('satellite-selection');
+      if (state.selectedSatelliteId === null || !state.snapshot) {
+        output.textContent = '点击卫星查看 ID、健康状态和任务状态。';
+        return;
+      }
+      const satellites = Array.isArray(state.snapshot.small_satellites) ? state.snapshot.small_satellites : [];
+      const selected = satellites.find((item) => String(item.id) === String(state.selectedSatelliteId));
+      if (!selected) {
+        output.textContent = `选中卫星 ${state.selectedSatelliteId} 不在最新快照中。`;
+        return;
+      }
+      output.textContent = `ID ${displayValue(selected.id)}  |  health ${displayValue(selected.health)}  |  task_state ${displayValue(selected.task_state)}`;
+    }
+
+    function drawSatellitePositions() {
+      const canvas = byId('satellite-canvas');
+      if (!state.hasSnapshot) {
+        byId('satellite-count').textContent = '等待快照';
+        drawCanvasMessage(canvas, '等待真实快照中的卫星位置');
+        return;
+      }
+      const source = Array.isArray(state.snapshot.small_satellites) ? state.snapshot.small_satellites : [];
+      const satellites = source.filter((satellite) => satellite && Array.isArray(satellite.position_m) &&
+        satellite.position_m.length >= 3 && satellite.position_m.slice(0, 3).every(finite)).slice(0, 9);
+      byId('satellite-count').textContent = `${satellites.length} / 9 星 · 点击选择`;
+      if (!satellites.length) {
+        state.satellitePlotPoints = [];
+        drawCanvasMessage(canvas, '最新快照没有可绘制的卫星位置');
+        updateSatelliteSelection();
+        return;
+      }
+
+      const center = [0, 1, 2].map((axis) =>
+        satellites.reduce((sum, satellite) => sum + satellite.position_m[axis], 0) / satellites.length);
+      const projected = satellites.map((satellite) => {
+        const x = satellite.position_m[0] - center[0];
+        const y = satellite.position_m[1] - center[1];
+        const z = satellite.position_m[2] - center[2];
+        return {
+          satellite,
+          x: (x - z) * Math.sqrt(3) / 2,
+          y: (x + z) / 2 - y
+        };
+      });
+      const extent = Math.max(1e-9, ...projected.flatMap((point) => [Math.abs(point.x), Math.abs(point.y)]));
+      const { context, width, height } = prepareCanvas(canvas);
+      const padding = 46;
+      const scale = Math.min((width - 2 * padding) / (2 * extent), (height - 2 * padding) / (2 * extent));
+      const originX = width / 2;
+      const originY = height / 2 + 5;
+
+      context.strokeStyle = '#273340';
+      context.beginPath();
+      context.moveTo(24, originY);
+      context.lineTo(width - 24, originY);
+      context.moveTo(originX, 24);
+      context.lineTo(originX, height - 24);
+      context.stroke();
+
+      const axes = [
+        { label: 'X', x: Math.sqrt(3) / 2, y: 0.5 },
+        { label: 'Z', x: -Math.sqrt(3) / 2, y: 0.5 },
+        { label: 'Y', x: 0, y: -1 }
+      ];
+      context.font = '11px Consolas, monospace';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      for (const axis of axes) {
+        const length = Math.min(38, width * 0.1, height * 0.13);
+        context.strokeStyle = '#40515f';
+        context.beginPath();
+        context.moveTo(originX, originY);
+        context.lineTo(originX + axis.x * length, originY + axis.y * length);
+        context.stroke();
+        context.fillStyle = '#8c9aa8';
+        context.fillText(axis.label, originX + axis.x * (length + 12), originY + axis.y * (length + 12));
+      }
+
+      state.satellitePlotPoints = projected.map((point) => ({
+        satellite: point.satellite,
+        x: originX + point.x * scale,
+        y: originY + point.y * scale
+      }));
+      for (const point of state.satellitePlotPoints) {
+        const selected = String(point.satellite.id) === String(state.selectedSatelliteId);
+        const color = satelliteColor(point.satellite);
+        if (selected) {
+          context.strokeStyle = '#f4d35e';
+          context.lineWidth = 2;
+          context.beginPath();
+          context.arc(point.x, point.y, 12, 0, Math.PI * 2);
+          context.stroke();
+          context.lineWidth = 1;
+        }
+        context.fillStyle = color;
+        context.beginPath();
+        context.arc(point.x, point.y, 7, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = '#dce5ec';
+        context.font = '11px Consolas, monospace';
+        context.textAlign = 'left';
+        context.fillText(displayValue(point.satellite.id), point.x + 11, point.y - 10, 100);
+      }
+      context.fillStyle = '#8c9aa8';
+      context.font = '10px Consolas, monospace';
+      context.textAlign = 'left';
+      context.fillText('相对质心 · 位置单位 m', 10, height - 12);
+      updateSatelliteSelection();
+    }
+
+    function drawUvCoverage() {
+      const canvas = byId('uv-canvas');
+      if (!state.hasSnapshot) {
+        byId('uv-count').textContent = '等待快照';
+        drawCanvasMessage(canvas, '等待真实快照中的 UV 点');
+        return;
+      }
+      const source = Array.isArray(state.snapshot.uv_points) ? state.snapshot.uv_points : [];
+      const points = source.filter((point) => Array.isArray(point) && point.length >= 2 && finite(point[0]) && finite(point[1]));
+      byId('uv-count').textContent = `${points.length} 点 + ${points.length} 共轭`;
+      if (!points.length) {
+        drawCanvasMessage(canvas, '最新快照没有可绘制的 UV 点');
+        return;
+      }
+      const extent = Math.max(1e-12, ...points.flatMap((point) => [Math.abs(point[0]), Math.abs(point[1])]));
+      const { context, width, height } = prepareCanvas(canvas);
+      const left = 38;
+      const right = width - 24;
+      const top = 24;
+      const bottom = height - 35;
+      const scale = Math.min((right - left) / (2 * extent), (bottom - top) / (2 * extent));
+      const centerX = (left + right) / 2;
+      const centerY = (top + bottom) / 2;
+
+      context.strokeStyle = '#354452';
+      context.beginPath();
+      context.moveTo(left, centerY);
+      context.lineTo(right, centerY);
+      context.moveTo(centerX, top);
+      context.lineTo(centerX, bottom);
+      context.stroke();
+      for (const point of points) {
+        for (const sign of [1, -1]) {
+          const x = centerX + sign * point[0] * scale;
+          const y = centerY - sign * point[1] * scale;
+          context.fillStyle = sign === 1 ? '#63c7d5' : '#d693e8';
+          context.beginPath();
+          context.arc(x, y, 2.3, 0, Math.PI * 2);
+          context.fill();
+        }
+      }
+      context.fillStyle = '#8c9aa8';
+      context.font = '11px Consolas, monospace';
+      context.textAlign = 'right';
+      context.fillText('u', right, centerY - 10);
+      context.textAlign = 'left';
+      context.fillText('v', centerX + 8, top + 6);
+      context.fillText(`±${formatNumber(extent)}`, 8, height - 10);
+    }
+
+    function drawPsf() {
+      const canvas = byId('psf-canvas');
+      if (!state.hasSnapshot) {
+        byId('psf-meta').textContent = '等待快照';
+        drawCanvasMessage(canvas, '等待真实二维 PSF 数值');
+        return;
+      }
+      const matrix = state.snapshot.psf;
+      if (!Array.isArray(matrix) || !matrix.length || !matrix.every((row) => Array.isArray(row) && row.length)) {
+        byId('psf-meta').textContent = '无有效矩阵';
+        drawCanvasMessage(canvas, '最新快照没有有效二维 PSF 矩阵');
+        return;
+      }
+      const columns = Math.min(...matrix.map((row) => row.length));
+      const rows = matrix.length;
+      if (!Number.isFinite(columns) || columns < 1) {
+        drawCanvasMessage(canvas, 'PSF 矩阵为空');
+        return;
+      }
+      const values = [];
+      for (let row = 0; row < rows; row += 1) {
+        for (let column = 0; column < columns; column += 1) {
+          if (finite(matrix[row][column])) values.push(matrix[row][column]);
+        }
+      }
+      if (!values.length) {
+        byId('psf-meta').textContent = '无有限数值';
+        drawCanvasMessage(canvas, 'PSF 矩阵没有有限数值');
+        return;
+      }
+      const minimum = Math.min(...values);
+      const maximum = Math.max(...values);
+      const range = maximum - minimum;
+      byId('psf-meta').textContent = `${columns} × ${rows} · 线性灰度`;
+
+      const { context, width, height } = prepareCanvas(canvas);
+      const offscreen = document.createElement('canvas');
+      offscreen.width = columns;
+      offscreen.height = rows;
+      const offscreenContext = offscreen.getContext('2d');
+      const image = offscreenContext.createImageData(columns, rows);
+      for (let row = 0; row < rows; row += 1) {
+        for (let column = 0; column < columns; column += 1) {
+          const value = matrix[row][column];
+          const offset = (row * columns + column) * 4;
+          if (!finite(value)) {
+            image.data[offset + 3] = 255;
+            continue;
+          }
+          const normalized = range > 0 ? (value - minimum) / range : 0.5;
+          const intensity = Math.round(12 + normalized * 243);
+          image.data[offset] = intensity;
+          image.data[offset + 1] = intensity;
+          image.data[offset + 2] = intensity;
+          image.data[offset + 3] = 255;
+        }
+      }
+      offscreenContext.putImageData(image, 0, 0);
+
+      const availableWidth = Math.max(1, width - 28);
+      const availableHeight = Math.max(1, height - 52);
+      const scale = Math.min(availableWidth / columns, availableHeight / rows);
+      const drawWidth = columns * scale;
+      const drawHeight = rows * scale;
+      const left = (width - drawWidth) / 2;
+      const top = 10 + (availableHeight - drawHeight) / 2;
+      context.imageSmoothingEnabled = false;
+      context.drawImage(offscreen, left, top, drawWidth, drawHeight);
+      context.strokeStyle = '#40515f';
+      context.strokeRect(left, top, drawWidth, drawHeight);
+      context.fillStyle = '#8c9aa8';
+      context.font = '10px Consolas, monospace';
+      context.textAlign = 'left';
+      context.fillText(`min ${formatNumber(minimum)}  max ${formatNumber(maximum)}`, 10, height - 10);
+    }
+
+    function readSpectrumInputs() {
+      const frequency = byId('frequency-hz').valueAsNumber;
+      const flux = byId('flux-jy').valueAsNumber;
+      const spectralIndex = byId('spectral-index').valueAsNumber;
+      if (!finite(frequency) || frequency <= 0 || !finite(flux) || flux <= 0 || !finite(spectralIndex)) return null;
+      const secondFlux = flux * Math.pow(2, spectralIndex);
+      if (!finite(secondFlux) || secondFlux <= 0) return null;
+      return { frequency, flux, spectralIndex, secondFrequency: frequency * 2, secondFlux };
+    }
+
+    function drawInputSpectrum() {
+      const canvas = byId('spectrum-canvas');
+      const input = readSpectrumInputs();
+      if (!input || !finite(input.secondFrequency)) {
+        drawCanvasMessage(canvas, '输入有效的频率、通量和谱指数以生成 synthetic input');
+        return;
+      }
+      const { context, width, height } = prepareCanvas(canvas);
+      const left = 70;
+      const right = Math.max(left + 1, width - 25);
+      const top = 48;
+      const bottom = Math.max(top + 1, height - 49);
+      const frequencies = [input.frequency, input.secondFrequency];
+      const fluxes = [input.flux, input.secondFlux];
+      const minimumFlux = Math.min(...fluxes) / 1.5;
+      const maximumFlux = Math.max(...fluxes) * 1.5;
+      const x = (frequency) => left + Math.log(frequency / frequencies[0]) / Math.log(2) * (right - left);
+      const y = (flux) => bottom - Math.log(flux / minimumFlux) / Math.log(maximumFlux / minimumFlux) * (bottom - top);
+
+      context.fillStyle = '#f4d35e';
+      context.font = '11px Consolas, monospace';
+      context.textAlign = 'left';
+      context.fillText('SYNTHETIC INPUT — NOT SNAPSHOT DATA', 12, 20);
+      context.strokeStyle = '#354452';
+      context.beginPath();
+      context.moveTo(left, top);
+      context.lineTo(left, bottom);
+      context.lineTo(right, bottom);
+      context.stroke();
+
+      context.strokeStyle = '#63c7d5';
+      context.setLineDash([5, 4]);
+      context.beginPath();
+      context.moveTo(x(frequencies[0]), y(fluxes[0]));
+      context.lineTo(x(frequencies[1]), y(fluxes[1]));
+      context.stroke();
+      context.setLineDash([]);
+
+      frequencies.forEach((frequency, index) => {
+        const pointX = x(frequency);
+        const pointY = y(fluxes[index]);
+        context.fillStyle = index === 0 ? '#63c7d5' : '#d693e8';
+        context.beginPath();
+        context.arc(pointX, pointY, 5, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = '#dce5ec';
+        context.font = '10px Consolas, monospace';
+        context.textAlign = index === 0 ? 'left' : 'right';
+        context.fillText(index === 0 ? 'INPUT' : '2F MODEL', pointX, Math.max(36, pointY - 12));
+        context.fillStyle = '#8c9aa8';
+        context.textAlign = 'center';
+        context.fillText(`${formatNumber(frequency)} Hz`, pointX, bottom + 16);
+        context.textAlign = index === 0 ? 'left' : 'right';
+        context.fillText(`${formatNumber(fluxes[index])} Jy`, pointX, Math.min(bottom - 5, pointY + 18));
+      });
+      context.fillStyle = '#8c9aa8';
+      context.textAlign = 'left';
+      context.fillText(`α = ${formatNumber(input.spectralIndex)} · log-log`, 12, height - 10);
+    }
+
+    function findMetric(metrics, names) {
+      if (!metrics || typeof metrics !== 'object') return undefined;
+      for (const name of names) {
+        if (Object.prototype.hasOwnProperty.call(metrics, name) && metrics[name] !== null && metrics[name] !== undefined) {
+          return metrics[name];
+        }
+      }
+      return undefined;
+    }
+
+    function setMetric(id, value, formatter = formatNumber) {
+      const element = byId(id);
+      if (value === undefined || value === null || (typeof value !== 'number' && typeof value !== 'string')) {
+        element.textContent = '—';
+        element.title = '最新快照未提供此字段';
+      } else {
+        element.textContent = typeof value === 'number' ? formatter(value) : value;
+        element.removeAttribute('title');
+      }
+    }
+
+    function updateMetrics() {
+      const metrics = state.snapshot && state.snapshot.metrics;
+      setMetric('metric-baselines', findMetric(metrics, ['baseline_count', 'baselines', 'n_baselines']), (value) => formatNumber(value, 0));
+      const coverage = findMetric(metrics, ['uv_coverage', 'coverage', 'coverage_fraction']);
+      setMetric('metric-coverage', coverage, (value) => value >= 0 && value <= 1 ? `${formatNumber(value * 100, 2)}%` : formatNumber(value));
+      setMetric('metric-sidelobe', findMetric(metrics, ['sidelobe', 'sidelobe_level', 'max_sidelobe', 'side_lobe', 'sidelobe_peak']));
+      const fwhmKeys = ['fwhm', 'fwhm_rad', 'main_lobe_fwhm_equivalent_radius_rad', 'fwhm_deg', 'fwhm_arcsec'];
+      const fwhm = findMetric(metrics, fwhmKeys);
+      const fwhmKey = fwhmKeys.find((key) => metrics && metrics[key] !== undefined && metrics[key] !== null);
+      const units = { fwhm_rad: ' rad', main_lobe_fwhm_equivalent_radius_rad: ' rad', fwhm_deg: '°', fwhm_arcsec: ' arcsec' };
+      setMetric('metric-fwhm', fwhm, (value) => `${formatNumber(value)}${units[fwhmKey] || ''}`);
+    }
+
+    function renderEvents() {
+      const log = byId('event-log');
+      log.replaceChildren();
+      const events = [...state.events.values()].sort((a, b) => b.seq - a.seq);
+      byId('event-count').textContent = `${events.length} 条 · 按 seq 倒序`;
+      if (!events.length) {
+        const item = document.createElement('li');
+        item.className = 'event-empty';
+        item.textContent = state.hasSnapshot ? '最新快照暂无事件。' : '等待真实快照中的主控切换、模式与任务事件。';
+        log.appendChild(item);
+        return;
+      }
+      for (const event of events.slice(0, 300)) {
+        const item = document.createElement('li');
+        const sequence = document.createElement('span');
+        const message = document.createElement('span');
+        sequence.className = 'event-seq';
+        message.className = 'event-message';
+        sequence.textContent = `seq ${event.seq}`;
+        message.textContent = event.message;
+        item.append(sequence, message);
+        log.appendChild(item);
+      }
+    }
+
+    function updateModeButtons() {
+      const mode = state.snapshot && state.snapshot.mode;
+      document.querySelectorAll('.mode-button[data-mode]').forEach((button) => {
+        const active = button.dataset.mode === mode;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+    }
+
+    function applySnapshot(snapshot) {
+      state.snapshot = snapshot;
+      state.hasSnapshot = true;
+      const leader = snapshot.leader && typeof snapshot.leader === 'object' ? snapshot.leader : {};
+      byId('leader-id').textContent = displayValue(leader.id);
+      byId('leader-epoch').textContent = displayValue(leader.epoch);
+      byId('plan-version').textContent = displayValue(snapshot.plan_version);
+      byId('mode-value').textContent = displayValue(snapshot.mode);
+      byId('simulation-time').textContent = finite(snapshot.time_s) ? `${formatNumber(snapshot.time_s, 3)} s` : displayValue(snapshot.time_s);
+      byId('last-update').textContent = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      if (Array.isArray(snapshot.events)) {
+        for (const event of snapshot.events) {
+          if (event && finite(event.seq) && event.message !== undefined && event.message !== null) {
+            state.events.set(event.seq, { seq: event.seq, message: String(event.message) });
+          }
+        }
+        if (state.events.size > 1000) {
+          const retained = [...state.events.values()].sort((a, b) => b.seq - a.seq).slice(0, 1000);
+          state.events = new Map(retained.map((event) => [event.seq, event]));
+        }
+      }
+      updateModeButtons();
+      updateMetrics();
+      renderEvents();
+      drawSatellitePositions();
+      drawUvCoverage();
+      drawPsf();
+      byId('waiting-banner').hidden = true;
+    }
+
+    function setConnection(status, text) {
+      const element = byId('connection-status');
+      element.dataset.state = status;
+      element.textContent = text;
+    }
+
+    function showSnapshotError(message) {
+      byId('error-banner').textContent = `快照连接异常：${message}。面板保留最近一次真实数据，并继续重试。`;
+      byId('error-banner').hidden = false;
+      setConnection('error', '连接异常');
+      if (!state.hasSnapshot) byId('waiting-banner').hidden = false;
+    }
+
+    async function fetchSnapshot() {
+      if (state.fetching) return;
+      state.fetching = true;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch(SNAPSHOT_PATH, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const snapshot = await response.json();
+        if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) throw new Error('响应不是有效快照对象');
+        applySnapshot(snapshot);
+        byId('error-banner').hidden = true;
+        setConnection('online', '已连接 · 1 s 轮询');
+      } catch (error) {
+        showSnapshotError(error.name === 'AbortError' ? '请求超时' : error.message);
+      } finally {
+        clearTimeout(timeout);
+        state.fetching = false;
+      }
+    }
+
+    async function postJson(path, payload) {
+      const response = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await response.text();
+      let body = null;
+      if (text) {
+        try { body = JSON.parse(text); } catch { body = null; }
+      }
+      if (!response.ok) {
+        const detail = body && (body.detail || body.error || body.message);
+        throw new Error(detail ? String(detail) : `HTTP ${response.status}`);
+      }
+      return body;
+    }
+
+    function responseSummary(body) {
+      return body === null || body === undefined ? '请求成功（响应无 JSON 内容）' : JSON.stringify(body);
+    }
+
+    async function setSatelliteFault(action) {
+      const satelliteId = byId('fault-satellite').value;
+      const injecting = action === 'inject';
+      if (injecting && !window.confirm(`确认向 ${satelliteId} 注入故障？`)) return;
+      const status = byId('fault-status');
+      const buttons = [byId('fault-inject'), byId('fault-recover')];
+      buttons.forEach((button) => { button.disabled = true; });
+      status.className = 'control-status';
+      status.textContent = `正在发送${injecting ? '故障注入' : '故障恢复'}请求…`;
+      try {
+        const body = await postJson(injecting ? FAULT_PATH : RECOVER_PATH, { satellite_id: satelliteId });
+        status.className = 'control-status success';
+        status.textContent = `${injecting ? '注入' : '恢复'} ${satelliteId} 返回：${responseSummary(body)}；后续变化以真实快照为准。`;
+        await fetchSnapshot();
+      } catch (error) {
+        status.className = 'control-status error';
+        status.textContent = `${injecting ? '注入' : '恢复'} ${satelliteId} 失败：${error.message}`;
+      } finally {
+        buttons.forEach((button) => { button.disabled = false; });
+      }
+    }
+
+    async function suspendMain() {
+      if (!window.confirm('确认暂停当前主控 22 秒以测试切换？')) return;
+      const button = byId('main-suspend');
+      const status = byId('main-status');
+      button.disabled = true;
+      status.className = 'control-status';
+      status.textContent = '正在请求暂停当前主控 22 秒…';
+      try {
+        const body = await postJson(SUSPEND_PATH, { seconds: 22 });
+        status.className = 'control-status success';
+        status.textContent = `暂停当前主控 22 秒请求返回：${responseSummary(body)}；切换结果以真实快照为准。`;
+        await fetchSnapshot();
+      } catch (error) {
+        status.className = 'control-status error';
+        status.textContent = `主控暂停请求失败：${error.message}`;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function parseCsvRows(text) {
+      const rows = [];
+      let row = [];
+      let value = '';
+      let inQuotes = false;
+      for (let index = 0; index < text.length; index += 1) {
+        const character = text[index];
+        if (inQuotes) {
+          if (character === '"') {
+            if (text[index + 1] === '"') {
+              value += '"';
+              index += 1;
+            } else {
+              inQuotes = false;
+            }
+          } else {
+            value += character;
+          }
+        } else if (character === '"' && value === '') {
+          inQuotes = true;
+        } else if (character === ',') {
+          row.push(value);
+          value = '';
+        } else if (character === '\n' || character === '\r') {
+          if (character === '\r' && text[index + 1] === '\n') index += 1;
+          row.push(value);
+          value = '';
+          if (row.some((cell) => cell.trim() !== '')) rows.push(row);
+          row = [];
+        } else {
+          value += character;
+        }
+      }
+      if (inQuotes) throw new Error('CSV 存在未闭合的引号');
+      if (value !== '' || row.length) {
+        row.push(value);
+        if (row.some((cell) => cell.trim() !== '')) rows.push(row);
+      }
+      return rows;
+    }
+
+    function validateEvent(raw, index) {
+      const location = `第 ${index + 1} 条事件`;
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error(`${location}不是对象`);
+      for (const field of EVENT_FIELDS) {
+        const value = raw[field];
+        if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
+          throw new Error(`${location}缺少必填字段 ${field}`);
+        }
+      }
+      const event = {
+        event_id: String(raw.event_id).trim(),
+        target_id: String(raw.target_id).trim()
+      };
+      if (!event.event_id || !event.target_id) throw new Error(`${location}的 event_id 和 target_id 不能为空`);
+      for (const field of NUMERIC_EVENT_FIELDS) {
+        if (!['number', 'string'].includes(typeof raw[field])) throw new Error(`${location}的 ${field} 必须是数值`);
+        const value = Number(raw[field]);
+        if (!finite(value)) throw new Error(`${location}的 ${field} 必须是有限数值`);
+        event[field] = value;
+      }
+      if (event.frequency_hz <= 0) throw new Error(`${location}的 frequency_hz 必须大于 0`);
+      if (event.flux_jy < 0) throw new Error(`${location}的 flux_jy 不能小于 0`);
+      if (event.confidence < 0 || event.confidence > 1) throw new Error(`${location}的 confidence 必须在 0 到 1 之间`);
+      if (event.expiry_s < 0) throw new Error(`${location}的 expiry_s 不能小于 0`);
+      return event;
+    }
+
+    function validateEventRecords(records) {
+      if (!Array.isArray(records) || !records.length) throw new Error('文件中没有事件数组');
+      if (records.length > MAX_FILE_EVENTS) throw new Error(`文件最多包含 ${MAX_FILE_EVENTS} 条事件`);
+      return records.map((record, index) => validateEvent(record, index));
+    }
+
+    function parseCsvEvents(text) {
+      const rows = parseCsvRows(text);
+      if (!rows.length) throw new Error('CSV 文件为空');
+      const headers = rows[0].map((header) => header.trim());
+      if (new Set(headers).size !== headers.length) throw new Error('CSV 表头存在重复字段');
+      const missing = EVENT_FIELDS.filter((field) => !headers.includes(field));
+      if (missing.length) throw new Error(`CSV 缺少表头：${missing.join(', ')}`);
+      if (rows.length - 1 > MAX_FILE_EVENTS) throw new Error(`文件最多包含 ${MAX_FILE_EVENTS} 条事件`);
+      const records = rows.slice(1).map((row, index) => {
+        if (row.length !== headers.length) throw new Error(`CSV 第 ${index + 2} 行列数与表头不一致`);
+        const record = {};
+        headers.forEach((header, column) => { record[header] = row[column]; });
+        return record;
+      });
+      return validateEventRecords(records);
+    }
+
+    function parseEventFile(text, fileName) {
+      const name = fileName.toLowerCase();
+      if (name.endsWith('.csv')) return parseCsvEvents(text);
+      if (name.endsWith('.json')) {
+        let parsed;
+        try { parsed = JSON.parse(text); } catch (error) { throw new Error(`JSON 解析失败：${error.message}`); }
+        const records = Array.isArray(parsed) ? parsed : parsed && Array.isArray(parsed.events) ? parsed.events : null;
+        if (!records) throw new Error('JSON 必须是事件数组或 {"events":[...]} 对象');
+        return validateEventRecords(records);
+      }
+      throw new Error('请选择 .csv 或 .json 文件');
+    }
+
+    function clearLoadedFile() {
+      state.fileEvents = [];
+      state.fileName = '';
+      byId('file-inject').disabled = true;
+      byId('file-preview').textContent = '尚未解析文件。';
+    }
+
+    function showFilePreview(events) {
+      const count = Math.min(3, events.length);
+      const lines = events.slice(0, count).map((event, index) =>
+        `${index + 1}. ${event.event_id} -> ${event.target_id} | ${event.frequency_hz} Hz | ${event.flux_jy} Jy | confidence ${event.confidence}`);
+      byId('file-preview').textContent = `共 ${events.length} 条，预览前 ${count} 条：\n${lines.join('\n')}`;
+    }
+
+    function handleFileSelection() {
+      clearLoadedFile();
+      const file = byId('event-file').files[0];
+      const status = byId('file-status');
+      status.className = 'control-status';
+      status.textContent = file ? `已选择 ${file.name}（${file.size} 字节），点击“解析文件”。` : '请选择 CSV 或 JSON 文件。';
+    }
+
+    async function loadEventFile() {
+      const input = byId('event-file');
+      const file = input.files && input.files[0];
+      const status = byId('file-status');
+      const loadButton = byId('file-load');
+      clearLoadedFile();
+      if (!file) {
+        status.className = 'control-status error';
+        status.textContent = '请先选择 CSV 或 JSON 文件。';
+        return;
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        status.className = 'control-status error';
+        status.textContent = `文件超过 1 MiB（${MAX_FILE_BYTES} 字节）限制。`;
+        return;
+      }
+      input.disabled = true;
+      loadButton.disabled = true;
+      status.className = 'control-status';
+      status.textContent = `正在本地读取 ${file.name}…`;
+      try {
+        const text = await file.text();
+        const events = parseEventFile(text.replace(/^\uFEFF/, ''), file.name);
+        state.fileEvents = events;
+        state.fileName = file.name;
+        showFilePreview(events);
+        status.className = 'control-status success';
+        status.textContent = `已从 ${file.name} 解析 ${events.length} 条事件；尚未注入。`;
+        byId('file-inject').disabled = false;
+      } catch (error) {
+        clearLoadedFile();
+        status.className = 'control-status error';
+        status.textContent = `文件解析失败：${error.message}`;
+      } finally {
+        input.disabled = false;
+        loadButton.disabled = false;
+      }
+    }
+
+    async function injectFileEvents() {
+      if (!state.fileEvents.length) {
+        byId('file-status').className = 'control-status error';
+        byId('file-status').textContent = '没有已解析且校验通过的事件。';
+        return;
+      }
+      const events = state.fileEvents.slice();
+      const input = byId('event-file');
+      const loadButton = byId('file-load');
+      const injectButton = byId('file-inject');
+      const status = byId('file-status');
+      input.disabled = true;
+      loadButton.disabled = true;
+      injectButton.disabled = true;
+      let accepted = 0;
+      let duplicate = 0;
+      let failed = 0;
+      const issues = [];
+      status.className = 'control-status';
+      try {
+        for (const event of events) {
+          status.textContent = `正在顺序注入 ${accepted + duplicate + failed + 1}/${events.length}：${event.event_id}`;
+          try {
+            const body = await postJson(EVENTS_PATH, event);
+            if (body && body.duplicate === true) {
+              duplicate += 1;
+              issues.push(`${event.event_id}: duplicate`);
+            } else if (body && body.accepted === true) {
+              accepted += 1;
+            } else {
+              failed += 1;
+              issues.push(`${event.event_id}: failed（响应未确认 accepted=true）`);
+            }
+          } catch (error) {
+            failed += 1;
+            issues.push(`${event.event_id}: failed（${error.message}）`);
+          }
+        }
+        status.className = failed ? 'control-status error' : 'control-status success';
+        status.textContent = `注入完成：accepted=${accepted}，duplicate=${duplicate}，failed=${failed}，共 ${events.length} 条。${issues.length ? ` 明细：${issues.join('；')}` : ''}`;
+        await fetchSnapshot();
+      } finally {
+        input.disabled = false;
+        loadButton.disabled = false;
+        injectButton.disabled = false;
+      }
+    }
+
+    async function setMode(mode) {
+      const status = byId('mode-status');
+      const buttons = [...document.querySelectorAll('.mode-button[data-mode]')];
+      buttons.forEach((button) => { button.disabled = true; });
+      status.className = 'control-status';
+      status.textContent = `正在发送 ${mode} 模式请求…`;
+      try {
+        await postJson(MODE_PATH, { mode });
+        status.className = 'control-status success';
+        status.textContent = `${mode} 请求已接受，等待真实快照确认模式变化。`;
+        await fetchSnapshot();
+      } catch (error) {
+        status.className = 'control-status error';
+        status.textContent = `模式请求失败：${error.message}`;
+      } finally {
+        buttons.forEach((button) => { button.disabled = false; });
+      }
+    }
+
+    async function submitEvent(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      if (!form.reportValidity()) return;
+      const payload = {
+        event_id: byId('event-id').value.trim(),
+        target_id: byId('target-id').value.trim(),
+        frequency_hz: byId('frequency-hz').valueAsNumber,
+        flux_jy: byId('flux-jy').valueAsNumber,
+        confidence: byId('confidence').valueAsNumber,
+        spectral_index: byId('spectral-index').valueAsNumber,
+        expiry_s: byId('expiry-s').valueAsNumber
+      };
+      const status = byId('event-status');
+      const submit = byId('event-submit');
+      submit.disabled = true;
+      status.className = '';
+      status.textContent = '正在提交…';
+      try {
+        await postJson(EVENTS_PATH, payload);
+        status.className = 'success';
+        status.textContent = '事件请求已接受，等待快照确认。';
+        await fetchSnapshot();
+      } catch (error) {
+        status.className = 'error';
+        status.textContent = `提交失败：${error.message}`;
+      } finally {
+        submit.disabled = false;
+      }
+    }
+
+    function selectSatellite(event) {
+      const canvas = byId('satellite-canvas');
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      let nearest = null;
+      let nearestDistance = 18;
+      for (const point of state.satellitePlotPoints) {
+        const distance = Math.hypot(point.x - x, point.y - y);
+        if (distance <= nearestDistance) {
+          nearest = point.satellite;
+          nearestDistance = distance;
+        }
+      }
+      if (nearest) {
+        state.selectedSatelliteId = nearest.id;
+        drawSatellitePositions();
+      }
+    }
+
+    function selectSatelliteWithKeyboard(event) {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      const ids = state.satellitePlotPoints.map((point) => point.satellite.id);
+      if (!ids.length) return;
+      event.preventDefault();
+      const current = ids.findIndex((id) => String(id) === String(state.selectedSatelliteId));
+      const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1;
+      const next = (current + direction + ids.length) % ids.length;
+      state.selectedSatelliteId = ids[next];
+      drawSatellitePositions();
+    }
+
+    function drawAll() {
+      drawSatellitePositions();
+      drawUvCoverage();
+      drawPsf();
+      drawInputSpectrum();
+    }
+
+    document.querySelectorAll('.mode-button[data-mode]').forEach((button) => {
+      button.addEventListener('click', () => setMode(button.dataset.mode));
+    });
+    byId('event-form').addEventListener('submit', submitEvent);
+    byId('fault-inject').addEventListener('click', () => setSatelliteFault('inject'));
+    byId('fault-recover').addEventListener('click', () => setSatelliteFault('recover'));
+    byId('main-suspend').addEventListener('click', suspendMain);
+    byId('event-file').addEventListener('change', handleFileSelection);
+    byId('file-load').addEventListener('click', loadEventFile);
+    byId('file-inject').addEventListener('click', injectFileEvents);
+    byId('satellite-canvas').addEventListener('click', selectSatellite);
+    byId('satellite-canvas').addEventListener('keydown', selectSatelliteWithKeyboard);
+    ['frequency-hz', 'flux-jy', 'spectral-index'].forEach((id) => byId(id).addEventListener('input', drawInputSpectrum));
+
+    let resizeFrame = 0;
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(resizeFrame);
+      resizeFrame = requestAnimationFrame(drawAll);
+    });
+
+    drawAll();
+    renderEvents();
+    fetchSnapshot();
+    setInterval(fetchSnapshot, 1000);
+  </script>
+</body>
+</html>

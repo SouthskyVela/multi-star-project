@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: multi-star
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: small-sat
+  namespace: multi-star
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: small-sat
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: small-sat
+  namespace: multi-star
+spec:
+  serviceName: small-sat
+  replicas: 9
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: small-sat
+  template:
+    metadata:
+      labels:
+        app: small-sat
+        multi-star.io/role: small-satellite
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 5
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: multi-star.io/failure-domain
+                    operator: Exists
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: small-sat
+      containers:
+        - name: satellite
+          image: registry.localhost:5001/multi-star-satellite:0.2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: SATELLITE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SMALL_SATELLITE_COUNT
+              value: "9"
+            - name: SNAPSHOT_PATH
+              value: /data/snapshot.json
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: snapshot
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: snapshot
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 64Mi

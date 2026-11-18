@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multi-star-sim"
+version = "0.2.5"
+description = "Scheduling mechanisms and algorithms for space-astronomy small-satellite constellations"
+requires-python = ">=3.12"
+dependencies = [
+  "numpy==2.5.5"
+]
+
+[project.scripts]
+multi-star-benchmark = "multi_star.benchmark:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+multi_star = ["static/*.html", "static/*.csv"]

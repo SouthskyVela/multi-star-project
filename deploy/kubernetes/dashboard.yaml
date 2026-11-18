@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard
+  namespace: multi-star
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      labels:
+        app: dashboard
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: dashboard
+          image: registry.localhost:5001/multi-star-main:0.2.5
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "multi_star.dashboard_proxy"]
+          ports:
+            - name: http
+              containerPort: 8082
+          env:
+            - name: PORT
+              value: "8082"
+            - name: MAIN_SATELLITE_COUNT
+              value: "3"
+            - name: SMALL_SATELLITE_COUNT
+              value: "9"
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  namespace: multi-star
+spec:
+  selector:
+    app: dashboard
+  ports:
+    - name: http
+      port: 8082
+      targetPort: http

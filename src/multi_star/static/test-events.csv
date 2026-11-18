@@ -1,0 +1,4 @@
+﻿event_id,target_id,frequency_hz,flux_jy,confidence,spectral_index,expiry_s
+file-event-001,synthetic-target-a,80000000,12.5,0.95,-0.7,600
+file-event-002,synthetic-target-b,140000000,25.0,0.97,-0.7,600
+file-event-003,synthetic-target-c,220000000,8.0,0.90,-0.7,600

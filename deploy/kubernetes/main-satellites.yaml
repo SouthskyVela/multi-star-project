@@ -1,0 +1,162 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: main-sat
+  namespace: multi-star
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: main-sat-coordinator
+  namespace: multi-star
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: main-sat-coordinator
+  namespace: multi-star
+subjects:
+  - kind: ServiceAccount
+    name: main-sat
+    namespace: multi-star
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: main-sat-coordinator
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: main-sat
+  namespace: multi-star
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: main-sat
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: main-control
+  namespace: multi-star
+spec:
+  selector:
+    app: main-sat
+    multi-star.io/active: "true"
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: main-sat
+  namespace: multi-star
+spec:
+  serviceName: main-sat
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: main-sat
+  template:
+    metadata:
+      labels:
+        app: main-sat
+        multi-star.io/role: main-satellite
+        multi-star.io/active: "false"
+    spec:
+      serviceAccountName: main-sat
+      automountServiceAccountToken: true
+      terminationGracePeriodSeconds: 10
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: multi-star.io/failure-domain
+                    operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app: main-sat
+      containers:
+        - name: main-satellite
+          image: registry.localhost:5001/multi-star-main:0.2.5
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8081
+          env:
+            - name: MAIN_SATELLITE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SMALL_SATELLITE_COUNT
+              value: "9"
+            - name: PORT
+              value: "8081"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: state
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: state
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 64Mi

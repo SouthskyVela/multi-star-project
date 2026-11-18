@@ -1,0 +1,15 @@
+mirrors:
+  docker.io:
+    endpoint:
+      - https://docker.m.daocloud.io
+    rewrite: {}
+  registry.localhost:5000:
+    endpoint:
+      - http://registry.localhost:5000
+    rewrite: {}
+  registry.localhost:5001:
+    endpoint:
+      - http://registry.localhost:5000
+    rewrite: {}
+configs: {}
+auths: {}

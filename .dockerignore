@@ -1,0 +1,9 @@
+runtime/
+.workbuddy/
+.git/
+.gitignore
+tests/
+scripts/
+deploy/
+config/
+*.md
