@@ -293,13 +293,23 @@ class Coordinator:
         now = self.time_s if now is None else float(now)
         if len(self.healthy_satellite_ids) < 2:
             raise ValueError("replanning requires at least two healthy small satellites")
-        selected = self.active_events(now=now)[:1] if self.mode is ObservationMode.FIXED_SOURCE else []
-        if self.mode is ObservationMode.FIXED_SOURCE and not selected:
-            raise ValueError("FIXED_SOURCE cannot be planned without an active event")
+        next_mode = self.mode
+        selected: list[ScienceEvent] = []
+        if next_mode is ObservationMode.FIXED_SOURCE:
+            selected = self.active_events(now=now)[:1]
+            if not selected:
+                # A fixed-source observation only exists while its event is
+                # valid.  Falling back keeps the scheduler productive instead
+                # of failing every tick once the event expires.
+                next_mode = ObservationMode.SURVEY
         next_formation = formation or self.formation
-        plan = self._build_revision(self.mode, next_formation, selected, now=now)
+        plan = self._build_revision(next_mode, next_formation, selected, now=now)
+        reverted = next_mode is not self.mode
+        self.mode = next_mode
         self.formation = next_formation
         self._commit(plan)
+        if reverted:
+            self.audit("fixed-source event expired; mode reverted to SURVEY")
         self.audit(f"{reason}; plan {plan.plan_version}")
         return plan
 

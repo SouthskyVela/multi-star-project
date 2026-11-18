@@ -250,14 +250,20 @@ class MainSatelliteServer(ThreadingHTTPServer):
                     self.coordinator.mark_unreachable(satellite_id, str(exc))
 
             healthy = set(self.coordinator.healthy_satellite_ids)
+            reason = None
             if self.coordinator.current_plan is None:
-                if len(healthy) >= 2:
-                    self.coordinator.replan(reason="initial plan")
+                reason = "initial plan"
             elif self.coordinator.current_plan.epoch != self.coordinator.epoch:
-                if len(healthy) >= 2:
-                    self.coordinator.replan(reason="leader epoch changed")
-            elif healthy != self._planned_healthy and len(healthy) >= 2:
-                self.coordinator.replan(reason="healthy satellite set changed")
+                reason = "leader epoch changed"
+            elif healthy != self._planned_healthy:
+                reason = "healthy satellite set changed"
+            if reason is not None and len(healthy) >= 2:
+                try:
+                    self.coordinator.replan(reason=reason)
+                except ValueError as exc:
+                    # A rejected revision must not be retried at scheduler
+                    # cadence; record it once and wait for the next real change.
+                    self.coordinator.audit(f"replanning skipped: {exc}")
             self._planned_healthy = healthy
 
             # Persist polling and the new revision before exposing commands.

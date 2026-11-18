@@ -84,6 +84,29 @@ class CoordinatorTest(unittest.TestCase):
             self.coordinator.switch_mode("SURVEY", event_id="event-1")
         self.assertEqual(self.coordinator.plan_version, 2)
 
+    def test_expired_fixed_source_event_falls_back_to_survey(self) -> None:
+        self.coordinator.add_event(event("short-lived", expiry=50.0))
+        self.coordinator.switch_mode(ObservationMode.FIXED_SOURCE, event_id="short-lived")
+        self.assertEqual(self.coordinator.mode, ObservationMode.FIXED_SOURCE)
+
+        self.coordinator.advance_time(self.coordinator.time_s + 60.0)
+        plan = self.coordinator.replan(reason="scheduled replanning")
+
+        self.assertEqual(self.coordinator.mode, ObservationMode.SURVEY)
+        self.assertEqual(plan.event_ids, ())
+        self.assertEqual(plan.plan_version, 2)
+
+    def test_repeated_replan_after_expiry_stays_usable(self) -> None:
+        self.coordinator.add_event(event("short-lived", expiry=50.0))
+        self.coordinator.switch_mode(ObservationMode.FIXED_SOURCE, event_id="short-lived")
+        self.coordinator.advance_time(self.coordinator.time_s + 60.0)
+
+        for _ in range(3):
+            plan = self.coordinator.replan(reason="scheduled replanning")
+            self.assertEqual(self.coordinator.mode, ObservationMode.SURVEY)
+
+        self.assertEqual(plan.plan_version, 4)
+
     def test_fault_replan_excludes_failed_and_never_reissues_unknown_transfer(self) -> None:
         self.coordinator.replan(reason="test initial")
         failed = self.coordinator.satellites["small-sat-2"]

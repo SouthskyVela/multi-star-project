@@ -1,4 +1,4 @@
 """Multi-star observation and scheduling simulation core."""
 
-__version__ = "0.2.5"
+__version__ = "0.2.7"
 DEFAULT_SMALL_SATELLITE_COUNT = 9

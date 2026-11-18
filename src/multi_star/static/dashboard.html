@@ -672,11 +672,56 @@
         context.beginPath();
         context.arc(point.x, point.y, 7, 0, Math.PI * 2);
         context.fill();
-        context.fillStyle = '#dce5ec';
-        context.font = '11px Consolas, monospace';
-        context.textAlign = 'left';
-        context.fillText(displayValue(point.satellite.id), point.x + 11, point.y - 10, 100);
       }
+
+      // Labels are pushed away from the cluster centre and nudged vertically
+      // when they collide, so a dense formation stays readable.
+      const labelBoxes = [];
+      context.font = '11px Consolas, monospace';
+      context.textBaseline = 'middle';
+      for (const point of state.satellitePlotPoints) {
+        const label = displayValue(point.satellite.id);
+        const dx = point.x - originX;
+        const dy = point.y - originY;
+        const length = Math.hypot(dx, dy);
+        const directionX = length > 1e-6 ? dx / length : 0.707;
+        const directionY = length > 1e-6 ? dy / length : -0.707;
+        const align = directionX >= 0 ? 'left' : 'right';
+        let textX = point.x + directionX * 22;
+        let textY = point.y + directionY * 22;
+        const textWidth = context.measureText(label).width;
+        textX = align === 'left'
+          ? Math.min(textX, width - textWidth - 6)
+          : Math.max(textWidth + 6, textX);
+        const box = {
+          x: align === 'left' ? textX : textX - textWidth,
+          y: textY - 7,
+          width: textWidth,
+          height: 14
+        };
+        for (let guard = 0; guard < 8; guard += 1) {
+          const clash = labelBoxes.some((other) =>
+            box.x < other.x + other.width + 4 && other.x < box.x + box.width + 4 &&
+            box.y < other.y + other.height && other.y < box.y + box.height);
+          if (!clash) break;
+          textY += 14;
+          box.y += 14;
+        }
+        textY = Math.max(14, Math.min(height - 14, textY));
+        box.y = textY - 7;
+        labelBoxes.push(box);
+        if (Math.hypot(textX - point.x, textY - point.y) > 14) {
+          context.strokeStyle = '#3a4a58';
+          context.beginPath();
+          context.moveTo(point.x + directionX * 9, point.y + directionY * 9);
+          context.lineTo(align === 'left' ? textX - 3 : textX + 3, textY);
+          context.stroke();
+        }
+        context.fillStyle = '#dce5ec';
+        context.textAlign = align;
+        context.fillText(label, textX, textY, 110);
+      }
+      context.textAlign = 'left';
       context.fillStyle = '#8c9aa8';
       context.font = '10px Consolas, monospace';
       context.textAlign = 'left';
