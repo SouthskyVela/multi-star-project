@@ -177,6 +177,12 @@ class DashboardStaticTests(unittest.TestCase):
         for mode in ("SURVEY", "FIXED_SOURCE", "CALIBRATION"):
             self.assertIn(mode, self.html)
 
+    def test_operation_status_never_dumps_raw_json(self):
+        self.assertNotIn("JSON.stringify(body)", self.html)
+        self.assertIn("function responseSummary", self.html)
+        self.assertIn("任务数", self.html)
+        self.assertIn("suspended_seconds", self.html)
+
 
 if __name__ == "__main__":
     unittest.main()

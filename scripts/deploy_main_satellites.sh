@@ -3,7 +3,7 @@ set -euo pipefail
 
 PROJECT="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 RUNTIME="$PROJECT/runtime"
-IMAGE=registry.localhost:5001/multi-star-main:0.2.8
+IMAGE=registry.localhost:5001/multi-star-main:0.2.9
 export KUBECONFIG="$RUNTIME/kubeconfig.yaml"
 LOG="$RUNTIME/results/deploy-main-$(date -u +%Y%m%dT%H%M%SZ).log"
 exec > >(tee "$LOG") 2>&1

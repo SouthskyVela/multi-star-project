@@ -1080,7 +1080,28 @@
     }
 
     function responseSummary(body) {
-      return body === null || body === undefined ? '请求成功（响应无 JSON 内容）' : JSON.stringify(body);
+      if (body === null || body === undefined) return '请求成功（响应无 JSON 内容）';
+      if (typeof body !== 'object') return String(body).slice(0, 120);
+      const labels = {
+        satellite_id: '卫星', health: '健康', ready: '可执行', task_state: '任务状态',
+        seconds: '暂停秒数', suspended_seconds: '暂停秒数', leader: '主控',
+        epoch: 'epoch', mode: '模式'
+      };
+      const parts = [];
+      Object.entries(labels).forEach(([key, label]) => {
+        const value = body[key];
+        if (value === undefined || value === null || typeof value === 'object') return;
+        parts.push(`${label} ${value}`);
+      });
+      if (Array.isArray(body.tasks)) parts.push(`任务数 ${body.tasks.length}`);
+      if (!parts.length) {
+        Object.entries(body).forEach(([key, value]) => {
+          if (parts.length >= 4 || value === null || typeof value === 'object') return;
+          parts.push(`${key} ${value}`);
+        });
+      }
+      const text = parts.join(' · ') || '请求成功';
+      return text.length > 140 ? `${text.slice(0, 137)}……` : text;
     }
 
     async function setSatelliteFault(action) {
