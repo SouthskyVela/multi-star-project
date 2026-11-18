@@ -107,6 +107,32 @@ class CoordinatorTest(unittest.TestCase):
 
         self.assertEqual(plan.plan_version, 4)
 
+    def test_repeated_failure_audit_is_not_flooded(self) -> None:
+        for _ in range(20):
+            self.coordinator.mark_unreachable("small-sat-0", "timeout")
+
+        messages = [item["message"] for item in self.coordinator.audit_log]
+        self.assertEqual(messages.count("small-sat-0 excluded after communication failure"), 1)
+
+        self.coordinator.audit("healthy satellite set changed; plan 1")
+        self.coordinator.mark_unreachable("small-sat-0", "timeout")
+        messages = [item["message"] for item in self.coordinator.audit_log]
+        self.assertEqual(messages.count("small-sat-0 excluded after communication failure"), 2)
+
+    def test_loaded_state_collapses_consecutive_duplicate_audits(self) -> None:
+        state = self.coordinator.to_dict()
+        state["audit_log"] = [
+            {"seq": 1, "message": "failure"},
+            {"seq": 2, "message": "failure"},
+            {"seq": 3, "message": "plan 1"},
+            {"seq": 4, "message": "failure"},
+        ]
+        restored = Coordinator.from_dict(state)
+        self.assertEqual(
+            [item["message"] for item in restored.audit_log],
+            ["failure", "plan 1", "failure"],
+        )
+
     def test_fault_replan_excludes_failed_and_never_reissues_unknown_transfer(self) -> None:
         self.coordinator.replan(reason="test initial")
         failed = self.coordinator.satellites["small-sat-2"]

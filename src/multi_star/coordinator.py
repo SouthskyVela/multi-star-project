@@ -557,8 +557,13 @@ class Coordinator:
         }
 
     def audit(self, message: str) -> None:
+        text = str(message)
+        # A persistent condition is retried at scheduler cadence; keeping the
+        # first occurrence preserves history without flooding the 500-entry log.
+        if self.audit_log and self.audit_log[-1]["message"] == text:
+            return
         sequence = self.audit_log[-1]["seq"] + 1 if self.audit_log else 1
-        self.audit_log.append({"seq": sequence, "message": str(message)})
+        self.audit_log.append({"seq": sequence, "message": text})
         if len(self.audit_log) > 500:
             del self.audit_log[:-500]
 
@@ -615,7 +620,13 @@ class Coordinator:
         coordinator.epoch = int(value["epoch"])
         coordinator.time_s = float(value["time_s"])
         coordinator.satellites = {item.satellite_id: item for item in satellites}
-        coordinator.audit_log = [dict(item) for item in value.get("audit_log", [])]
+        collapsed_audit: list[dict[str, Any]] = []
+        for item in value.get("audit_log", []):
+            entry = dict(item)
+            if collapsed_audit and collapsed_audit[-1]["message"] == entry.get("message"):
+                continue
+            collapsed_audit.append(entry)
+        coordinator.audit_log = collapsed_audit[-500:]
         if coordinator.current_plan and coordinator.current_plan.plan_version != coordinator.plan_version:
             raise ValueError("latest plan does not match plan_version")
         return coordinator

@@ -100,7 +100,7 @@ spec:
                   app: main-sat
       containers:
         - name: main-satellite
-          image: registry.localhost:5001/multi-star-main:0.2.7
+          image: registry.localhost:5001/multi-star-main:0.2.8
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
