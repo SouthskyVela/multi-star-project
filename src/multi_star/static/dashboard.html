@@ -598,7 +598,8 @@
       const source = Array.isArray(state.snapshot.small_satellites) ? state.snapshot.small_satellites : [];
       const satellites = source.filter((satellite) => satellite && Array.isArray(satellite.position_m) &&
         satellite.position_m.length >= 3 && satellite.position_m.slice(0, 3).every(finite)).slice(0, 9);
-      byId('satellite-count').textContent = `${satellites.length} / 9 星 · 点击选择`;
+      const healthyCount = satellites.filter((satellite) => String(satellite.health).toLowerCase() === 'nominal').length;
+      byId('satellite-count').textContent = `${satellites.length} / 9 星 · 健康 ${healthyCount} · 点击选择`;
       if (!satellites.length) {
         state.satellitePlotPoints = [];
         drawCanvasMessage(canvas, '最新快照没有可绘制的卫星位置');
@@ -1104,11 +1105,37 @@
       return text.length > 140 ? `${text.slice(0, 137)}……` : text;
     }
 
+    const confirmTimers = new Map();
+    // Two-step confirmation keeps destructive actions safe without a native
+    // dialog, which blocks automated UI tests and cannot be styled.
+    function requireSecondClick(button, label) {
+      const original = button.dataset.label || button.textContent;
+      button.dataset.label = original;
+      if (button.dataset.armed === 'true') {
+        button.dataset.armed = 'false';
+        button.textContent = original;
+        clearTimeout(confirmTimers.get(button.id));
+        return true;
+      }
+      button.dataset.armed = 'true';
+      button.textContent = `再次点击确认：${label}`;
+      clearTimeout(confirmTimers.get(button.id));
+      confirmTimers.set(button.id, setTimeout(() => {
+        button.dataset.armed = 'false';
+        button.textContent = original;
+      }, 15000));
+      return false;
+    }
+
     async function setSatelliteFault(action) {
       const satelliteId = byId('fault-satellite').value;
       const injecting = action === 'inject';
-      if (injecting && !window.confirm(`确认向 ${satelliteId} 注入故障？`)) return;
       const status = byId('fault-status');
+      if (injecting && !requireSecondClick(byId('fault-inject'), '注入故障')) {
+        status.className = 'control-status';
+        status.textContent = `再次点击“注入故障”以确认向 ${satelliteId} 注入；15 秒后自动取消。`;
+        return;
+      }
       const buttons = [byId('fault-inject'), byId('fault-recover')];
       buttons.forEach((button) => { button.disabled = true; });
       status.className = 'control-status';
@@ -1127,9 +1154,13 @@
     }
 
     async function suspendMain() {
-      if (!window.confirm('确认暂停当前主控 22 秒以测试切换？')) return;
       const button = byId('main-suspend');
       const status = byId('main-status');
+      if (!requireSecondClick(button, '暂停主控 22 秒')) {
+        status.className = 'control-status';
+        status.textContent = '再次点击按钮以确认暂停；15 秒后自动取消。';
+        return;
+      }
       button.disabled = true;
       status.className = 'control-status';
       status.textContent = '正在请求暂停当前主控 22 秒…';

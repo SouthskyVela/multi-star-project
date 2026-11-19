@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "multi-star-sim"
-version = "0.2.9"
+version = "0.3.2"
 description = "Scheduling mechanisms and algorithms for space-astronomy small-satellite constellations"
 requires-python = ">=3.12"
 dependencies = [

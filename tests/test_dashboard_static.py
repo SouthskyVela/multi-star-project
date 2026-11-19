@@ -132,7 +132,9 @@ class DashboardStaticTests(unittest.TestCase):
             self.assertIn(f'<option value="small-sat-{index}">', self.html)
         self.assertIn("{ satellite_id: satelliteId }", self.html)
         self.assertIn("暂停当前主控 22 秒（测试切换）", self.html)
-        self.assertGreaterEqual(self.html.count("window.confirm("), 2)
+        self.assertNotIn("window.confirm(", self.html)
+        self.assertIn("function requireSecondClick", self.html)
+        self.assertIn("再次点击确认", self.html)
 
     def test_event_file_controls_sample_and_limits_exist(self):
         for element_id in (

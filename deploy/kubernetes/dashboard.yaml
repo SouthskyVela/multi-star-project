@@ -16,7 +16,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: dashboard
-          image: registry.localhost:5001/multi-star-main:0.2.9
+          image: registry.localhost:5001/multi-star-main:0.3.2
           imagePullPolicy: IfNotPresent
           command: ["python", "-m", "multi_star.dashboard_proxy"]
           ports:
