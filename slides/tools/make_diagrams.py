@@ -150,7 +150,7 @@ def cluster() -> str:
 
     # nodes
     nodes = [
-        ("server", "控制平面\netcd / apiserver", 200, 350, 250),
+        ("server", "控制平面\napiserver / SQLite", 200, 350, 250),
         ("agent-0", "承载 Pod", 480, 350, 250),
         ("agent-1", "承载 Pod", 760, 350, 250),
         ("agent-2", "承载 Pod", 1040, 350, 250),

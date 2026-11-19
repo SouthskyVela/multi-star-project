@@ -8,6 +8,7 @@ transition: fade
 mdc: true
 layout: cover
 paginate: true
+colorSchema: light
 ---
 
 # 空间天文小卫星群相关调度机制与算法开发
@@ -221,40 +222,25 @@ figcaption { font-size: 0.72rem; color: #64748b; margin-top: 0.35rem; }
 
 ---
 
-# 系统总体架构
-
-<img src="/img/diagrams/01-architecture.png" class="w-full mt-2 rounded border border-slate-200" />
-
-<div class="grid grid-cols-3 gap-4 mt-3 text-xs text-slate-600">
-
-<div><b>展示层</b>：面板只读快照；Headlamp 只读资源。</div>
-
-<div><b>控制面</b>：主星竞争 Lease，只有 leader 下发命令。</div>
-
-<div><b>数据面</b>：九颗小星各自持有 PVC，分块回传。</div>
-
+<div class="absolute inset-0 flex items-center justify-center bg-white">
+  <img src="/img/diagrams/01-architecture.png" class="max-w-full max-h-full object-contain" />
 </div>
+
+<!--
+三层职责：展示层只读快照与资源；控制面由 Lease 决定唯一 leader，只有 leader 能下发命令；
+数据面九颗小星各自持有 PVC 并分块回传。
+-->
 
 ---
 
-# 集群架构：从笔记本到 K3s
-
-<img src="/img/diagrams/02-cluster.png" class="w-full mt-1 rounded border border-slate-200" />
-
-<div class="mt-3 grid grid-cols-4 gap-3 text-xs">
-
-<div class="p-2 rounded bg-slate-100"><b>Node</b>：虚拟主机，这里是 k3d 启动的 4 个容器（1 server + 3 agent）。</div>
-
-<div class="p-2 rounded bg-slate-100"><b>Pod</b>：最小调度单元，每颗卫星一个 Pod。</div>
-
-<div class="p-2 rounded bg-slate-100"><b>Namespace</b>：<code>multi-star</code>，隔离业务对象。</div>
-
-<div class="p-2 rounded bg-slate-100"><b>Service</b>：稳定 DNS，屏蔽 Pod IP 变化。</div>
-
+<div class="absolute inset-0 flex items-center justify-center bg-white">
+  <img src="/img/diagrams/02-cluster.png" class="max-w-full max-h-full object-contain" />
 </div>
 
-<div class="tiny mt-3">K3s 默认使用 SQLite（kine）作为数据存储，不需要单独部署 etcd。</div>
-
+<!--
+Node 是虚拟主机（k3d 容器），Pod 才是调度单位；Namespace 隔离业务；Service 提供稳定 DNS。
+K3s 默认用 SQLite（kine），不需要单独部署 etcd。
+-->
 ---
 
 # 资源全景：Headlamp 里的真实集群（1/2）
@@ -332,50 +318,31 @@ figcaption { font-size: 0.72rem; color: #64748b; margin-top: 0.35rem; }
 
 ---
 
-# 调度机制：租约、围栏与接管
-
-<img src="/img/diagrams/03-scheduling.png" class="w-full mt-1 rounded border border-slate-200" />
-
-<div class="grid grid-cols-3 gap-4 mt-2 text-xs">
-
-<div><b>Lease</b>：<code>multi-star-control</code> 决定唯一主控。</div>
-
-<div><b>epoch</b>：每次接管单调递增，旧 epoch 命令被拒绝。</div>
-
-<div><b>command_id</b>：幂等键，重复投递只生效一次。</div>
-
+<div class="absolute inset-0 flex items-center justify-center bg-white">
+  <img src="/img/diagrams/03-scheduling.png" class="max-w-full max-h-full object-contain" />
 </div>
 
+<!--
+Lease 决定唯一主控；epoch 单调递增，旧主控命令被拒绝；command_id 保证幂等。
+-->
 ---
 
-# 运行模式与任务流程
-
-<img src="/img/diagrams/04-modes.png" class="w-full mt-1 rounded border border-slate-200" />
-
-<div class="mt-2 text-sm">
-
-- 模式切换必须先通过前置校验：健康小星 ≥ 2、没有 UNKNOWN 在途任务
-- <code>FIXED_SOURCE</code> 只能由未过期事件进入；事件到期自动回退 <code>SURVEY</code>
-- 每次切换或重构都会生成新的 <code>plan_version</code>，旧计划不会被“改写”
-
+<div class="absolute inset-0 flex items-center justify-center bg-white">
+  <img src="/img/diagrams/04-modes.png" class="max-w-full max-h-full object-contain" />
 </div>
 
+<!--
+切换前校验健康小星不少于 2 颗且没有 UNKNOWN 在途任务；FIXED_SOURCE 需要未过期事件，事件到期自动回退 SURVEY；每次切换生成新的 plan_version。
+-->
 ---
 
-# 数据流与通信拓扑
-
-<img src="/img/diagrams/05-dataflow.png" class="w-full mt-1 rounded border border-slate-200" />
-
-<div class="grid grid-cols-3 gap-4 mt-2 text-xs">
-
-<div><b>小星 → 主控</b>：状态轮询与分块上传，只有出站 HTTP。</div>
-
-<div><b>主控之间</b>：不直接互连，靠 Lease 与 ConfigMap 协调。</div>
-
-<div><b>面板</b>：只读 <code>/api/snapshot</code>，无 leader 时明确返回 503。</div>
-
+<div class="absolute inset-0 flex items-center justify-center bg-white">
+  <img src="/img/diagrams/05-dataflow.png" class="max-w-full max-h-full object-contain" />
 </div>
 
+<!--
+小星只向主控出站；主控之间靠 Lease 与 ConfigMap 协调；面板只读快照，无 leader 时返回 503。
+-->
 ---
 
 # 阵列构型与成像指标
@@ -451,7 +418,7 @@ figcaption { font-size: 0.72rem; color: #64748b; margin-top: 0.35rem; }
 
 <div class="mt-3 text-sm">
 
-点击“暂停当前主控 22 秒”后，原主控停止续约与下发；租约到期后由其他主星接管。切换时间约 15–16 s，取决于租约与轮询周期。
+点击“暂停当前主控 22 秒”后，原主控停止续约与下发；租约到期后由其他主星接管。接管发生在租约到期后的数个轮询周期内（本次实测约 20 s 内完成）。
 
 </div>
 
@@ -472,7 +439,7 @@ figcaption { font-size: 0.72rem; color: #64748b; margin-top: 0.35rem; }
 **日志证据**
 
 - <code>leader epoch changed; plan 161</code>：接管触发重构
-- 旧主控恢复后仍以 epoch 16 下发，被小星以 epoch 围栏拒绝
+- 旧主控恢复后仍持 epoch 16；按设计其命令会被 epoch 围栏拒绝（单元测试覆盖）
 - 面板始终只有一个 leader，未出现双主控写状态
 
 <br>
@@ -672,21 +639,21 @@ figcaption { font-size: 0.72rem; color: #64748b; margin-top: 0.35rem; }
 
 # 参考文献
 
-<div class="text-xs leading-7">
+<div class="text-[0.8rem] leading-7">
 
-[1] van Haarlem, M. P., Wise, M. W., Gunst, A. W., et al. (2013). **LOFAR: The LOw-Frequency ARray**. *Astronomy & Astrophysics*, 556, A2. DOI: [10.1051/0004-6361/201220873](https://doi.org/10.1051/0004-6361/201220873)
+\[1\] van Haarlem, M. P., Wise, M. W., Gunst, A. W., et al. (2013). **LOFAR: The LOw-Frequency ARray**. *Astronomy & Astrophysics*, 556, A2. DOI: [10.1051/0004-6361/201220873](https://doi.org/10.1051/0004-6361/201220873)
 
-[2] Ferrari, B., Cordeau, J.-F., Delorme, M., Iori, M., & Orosei, R. (2024). **Satellite Scheduling Problems: A survey of applications in Earth and outer space observation**. *Computers & Operations Research*, 173, 106875. DOI: [10.1016/j.cor.2024.106875](https://doi.org/10.1016/j.cor.2024.106875)
+\[2\] Ferrari, B., Cordeau, J.-F., Delorme, M., Iori, M., & Orosei, R. (2024). **Satellite Scheduling Problems: A survey of applications in Earth and outer space observation**. *Computers & Operations Research*, 173, 106875. DOI: [10.1016/j.cor.2024.106875](https://doi.org/10.1016/j.cor.2024.106875)
 
-[3] Thompson, A. R., Moran, J. M., & Swenson, G. W. (2017). **Interferometry and Synthesis in Radio Astronomy** (3rd ed.). Springer. DOI: [10.1007/978-3-319-44431-4](https://doi.org/10.1007/978-3-319-44431-4)
+\[3\] Thompson, A. R., Moran, J. M., & Swenson, G. W. (2017). **Interferometry and Synthesis in Radio Astronomy** (3rd ed.). Springer. DOI: [10.1007/978-3-319-44431-4](https://doi.org/10.1007/978-3-319-44431-4)
 
-[4] Kubernetes Documentation. **Leases** (coordination.k8s.io). https://kubernetes.io/docs/concepts/architecture/leases/
+\[4\] Kubernetes Documentation. **Leases** (coordination.k8s.io). https://kubernetes.io/docs/concepts/architecture/leases/
 
-[5] K3s Documentation. **Lightweight Kubernetes**. https://docs.k3s.io/
+\[5\] K3s Documentation. **Lightweight Kubernetes**. https://docs.k3s.io/
 
-[6] k3d Documentation. **k3s in Docker**. https://k3d.io/
+\[6\] k3d Documentation. **k3s in Docker**. https://k3d.io/
 
-[7] Headlamp. **Kubernetes UI**. https://headlamp.dev/
+\[7\] Headlamp. **Kubernetes UI**. https://headlamp.dev/
 
 </div>
 

@@ -20,7 +20,7 @@
 <rect x="200" y="350" width="250" height="150" rx="10" ry="10" fill="#ffffff" stroke="#0f766e" stroke-width="1.6"/>
 <text x="216" y="380" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">server</text>
 <text x="216" y="408" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">控制平面</text>
-<text x="216" y="430" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">etcd / apiserver</text>
+<text x="216" y="430" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">apiserver / SQLite</text>
 <rect x="480" y="350" width="250" height="150" rx="10" ry="10" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.6"/>
 <text x="496" y="380" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="17" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">agent-0</text>
 <text x="496" y="408" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">承载 Pod</text>
