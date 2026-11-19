@@ -76,7 +76,7 @@
 <line x1="912" y1="392" x2="790" y2="392" stroke="#5b6776" stroke-width="1.6" marker-end="url(#arrow)"/>
 <text x="846" y="414" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">查询</text>
 <line x1="640" y1="520" x2="916" y2="495" stroke="#5b6776" stroke-width="1.4" marker-end="url(#arrow)"/>
-<text x="700" y="486" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">续约 / 选主</text>
+<text x="700" y="486" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">续约 / 竞选</text>
 <line x1="640" y1="590" x2="916" y2="585" stroke="#5b6776" stroke-width="1.4" marker-end="url(#arrow)"/>
 <text x="716" y="574" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">持久化</text>
 <line x1="545" y1="640" x2="545" y2="604" stroke="#5b6776" stroke-width="1.2" marker-end="url(#arrow)"/>

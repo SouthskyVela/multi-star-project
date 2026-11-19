@@ -25,21 +25,21 @@
 <rect x="90" y="340" width="390" height="180" rx="12" ry="12" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
 <text x="110" y="372" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="20" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">main-sat-0</text>
 <text x="390" y="372" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="bold" text-anchor="start" opacity="1.0">FOLLOWER</text>
-<text x="110" y="404" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">租约选主 / 计划生成</text>
+<text x="110" y="404" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">主控竞选 / 计划生成</text>
 <text x="110" y="430" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">命令下发 / 状态持久化</text>
 <text x="110" y="456" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">阵列引擎（uv / PSF）</text>
 <text x="110" y="490" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">epoch 17 · plan 168</text>
 <rect x="520" y="340" width="390" height="180" rx="12" ry="12" fill="#e6f4f1" stroke="#0f766e" stroke-width="2.2"/>
 <text x="540" y="372" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="20" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">main-sat-1</text>
 <text x="820" y="372" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#0f766e" font-weight="bold" text-anchor="start" opacity="1.0">LEADER</text>
-<text x="540" y="404" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">租约选主 / 计划生成</text>
+<text x="540" y="404" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">主控竞选 / 计划生成</text>
 <text x="540" y="430" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">命令下发 / 状态持久化</text>
 <text x="540" y="456" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">阵列引擎（uv / PSF）</text>
 <text x="540" y="490" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">epoch 17 · plan 168</text>
 <rect x="950" y="340" width="390" height="180" rx="12" ry="12" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
 <text x="970" y="372" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="20" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">main-sat-2</text>
 <text x="1250" y="372" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="bold" text-anchor="start" opacity="1.0">FOLLOWER</text>
-<text x="970" y="404" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">租约选主 / 计划生成</text>
+<text x="970" y="404" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">主控竞选 / 计划生成</text>
 <text x="970" y="430" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">命令下发 / 状态持久化</text>
 <text x="970" y="456" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">阵列引擎（uv / PSF）</text>
 <text x="970" y="490" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">epoch 17 · plan 168</text>

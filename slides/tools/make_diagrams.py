@@ -90,7 +90,7 @@ def architecture() -> str:
         b.append(box(x, 340, 390, 180, fill, stroke, 12, 2.2 if leader else 1.5))
         b.append(text(x + 20, 372, f"main-sat-{index}", 20, INK, "bold"))
         b.append(text(x + 300, 372, "LEADER" if leader else "FOLLOWER", 13, TEAL if leader else MUTED, "bold"))
-        b.append(text(x + 20, 404, "租约选主 / 计划生成", 15, INK))
+        b.append(text(x + 20, 404, "主控竞选 / 计划生成", 15, INK))
         b.append(text(x + 20, 430, "命令下发 / 状态持久化", 15, INK))
         b.append(text(x + 20, 456, "阵列引擎（uv / PSF）", 15, INK))
         b.append(text(x + 20, 490, "epoch 17 · plan 168", 13, MUTED))
@@ -192,7 +192,7 @@ def cluster() -> str:
 
 # ---------------------------------------------------------------- 3. scheduling
 def scheduling() -> str:
-    b = [title("调度时序：租约选主、命令围栏与主控接管", "同一条命令只在特定 epoch 与 plan 版本内有效，旧主控恢复后无法重新生效")]
+    b = [title("调度时序：主控竞选、命令围栏与接管", "同一条命令只在特定 epoch 与 plan 版本内有效，旧主控恢复后无法重新生效")]
 
     actors = [("main-sat-0", 170), ("main-sat-1", 560), ("main-sat-2", 950), ("Lease", 1240), ("small-sat-*", 1470)]
     for name, x in actors:
@@ -343,7 +343,7 @@ def dataflow() -> str:
     b.append(text(846, 414, "查询", 12, MUTED))
 
     b.append(arrow(640, 520, 916, 495, MUTED, 1.4))
-    b.append(text(700, 486, "续约 / 选主", 12, MUTED))
+    b.append(text(700, 486, "续约 / 竞选", 12, MUTED))
     b.append(arrow(640, 590, 916, 585, MUTED, 1.4))
     b.append(text(716, 574, "持久化", 12, MUTED))
 
