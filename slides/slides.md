@@ -1,0 +1,711 @@
+---
+theme: default
+title: 空间天文小卫星群相关调度机制与算法开发
+info: |
+  课程作业汇报 · Multi-Star 0.3.2
+class: text-slate-800
+transition: fade
+mdc: true
+layout: cover
+paginate: true
+---
+
+# 空间天文小卫星群相关调度机制与算法开发
+
+<div class="mt-6 text-slate-500">
+课程作业汇报 · Multi-Star / <code>multi-star-sim</code> 0.3.2
+</div>
+
+<div class="pt-12 text-sm text-slate-500">
+汇报人：____________　　学号：____________　　2026 年 11 月
+</div>
+
+<style>
+h1 { font-size: 2.0rem; }
+h2 { font-size: 1.35rem; margin-bottom: 0.6rem; }
+ table { font-size: 0.82rem; }
+figcaption { font-size: 0.72rem; color: #64748b; margin-top: 0.35rem; }
+.small { font-size: 0.85rem; }
+.tiny { font-size: 0.72rem; color: #64748b; }
+</style>
+
+---
+
+# 汇报结构
+
+<div class="grid grid-cols-2 gap-8 mt-8 text-sm">
+
+<div>
+
+**一、问题与方案**
+
+- 选题背景：低频射电、超大视场、小卫星群
+- 研究目标、范围与边界
+- 需求分析与软件工程实施方案
+
+**二、系统设计**
+
+- 总体架构与集群架构
+- 调度机制、运行模式、数据流
+- 阵列构型与成像指标
+
+</div>
+
+<div>
+
+**三、实现与验证**
+
+- Headlamp 资源全景（逐层展开）
+- Pod 构成与虚拟卫星参数
+- 三类测试与故障注入实测
+
+**四、总结**
+
+- 工程化实践与局限
+- 后续工作与参考文献
+
+</div>
+
+</div>
+
+---
+
+# 选题背景：为什么要“小卫星群 + 调度”
+
+<div class="grid grid-cols-3 gap-5 mt-6 text-sm">
+
+<div class="p-4 border rounded">
+
+**低频射电的物理需求**
+
+30–240 MHz 是观测宇宙黑暗时代、射电瞬变与太阳活动的关键窗口，但波长长、单口径难以获得高分辨率。
+
+</div>
+
+<div class="p-4 border rounded">
+
+**超大视场与瞬时覆盖**
+
+低频阵列视场可达数十平方度，需要大量天线单元同时工作，形成瞬时、宽视场的采样。
+
+</div>
+
+<div class="p-4 border rounded">
+
+**分布式小卫星群**
+
+以多颗小卫星替代单一大型平台，可扩展口径、降低成本，但带来选主、同步、故障与任务编排问题。
+
+</div>
+
+</div>
+
+<div class="mt-6 p-4 rounded bg-slate-100 text-sm">
+
+本课题不追求真实的轨道动力学与全链路成像，而是把“**分布式调度机制**”做成可运行、可复现、可观测的原型：三颗主星 + 九颗小卫星，运行在本地 Kubernetes 集群上。
+
+</div>
+
+<div class="tiny mt-3">参考：LOFAR 的低频阵列设计与 SKA 的科学目标，见文末文献 [1][3]。</div>
+
+---
+
+# 研究目标与边界
+
+<div class="grid grid-cols-2 gap-6 mt-4 text-sm">
+
+<div>
+
+### 要做的事
+
+- **主控选举与接管**：同一时刻只有一个主控，故障后自动切换
+- **任务编排**：巡天、定源、定标三种模式的状态机
+- **命令可靠性**：幂等、围栏、重放保护、不可逆变轨不重发
+- **阵列评估**：构型、uv 覆盖、dirty beam / PSF
+- **可观测性**：实时面板、审计日志、资源全景
+
+</div>
+
+<div>
+
+### 不做什么
+
+- 不做真实轨道摄动、姿态控制与推进建模
+- 不做完整射电成像管线（成像仅用于评估阵列）
+- 不构成飞行安全证明
+- 不覆盖任意非对称网络分区
+- 不依赖 GPU 也能完成核心调度（GPU 仅加速批量评估）
+
+</div>
+
+</div>
+
+<div class="mt-6 p-3 border-l-4 border-teal-600 bg-teal-50 text-sm">
+
+**设计原则**：先把分布式系统最容易出错的部分（选主、幂等、故障恢复）做成真实可验证的机制，再叠加天文业务语义。
+
+</div>
+
+---
+
+# 需求分析
+
+<div class="text-sm">
+
+| 类别 | 需求 | 验收方式 |
+|---|---|---|
+| 功能 | 三主星租约选主，故障后 30 s 内完成接管 | 暂停主控 22 s，观察 leader 与 epoch |
+| 功能 | 九小星编队，支持故障注入与显式恢复 | 注入后健康 8/9、基线 36→28；恢复后回到 9/36 |
+| 功能 | 天文事件触发定源观测，事件去重 | 相同 event_id 重复提交不增加计划版本 |
+| 功能 | 巡天 / 定源 / 定标模式切换 | 面板按钮与审计日志一致 |
+| 非功能 | 命令幂等与旧主控围栏 | 单元测试覆盖 epoch / plan / command_id |
+| 非功能 | 可复现部署 | 单机脚本从零创建集群并部署 |
+| 非功能 | 可观测 | 面板 1 s 快照、审计日志、Headlamp 资源视图 |
+| 非功能 | 可移植 | 仓库不含主机绝对路径，换路径可直接运行 |
+
+</div>
+
+<div class="tiny mt-3">完整验收记录见 <code>runtime/results/</code> 与 74 项自动化测试。</div>
+
+---
+
+# 软件工程实施方案
+
+<div class="grid grid-cols-4 gap-3 mt-5 text-xs">
+
+<div class="p-3 border rounded">
+<div class="font-bold text-sm mb-2">① 需求与原型</div>
+明确三种模式、九个验收场景；先跑通单机容器，再上集群。
+</div>
+
+<div class="p-3 border rounded">
+<div class="font-bold text-sm mb-2">② 迭代开发</div>
+0.2.x 完成调度与面板；0.3.x 修复过期事件、日志刷屏与确认交互。
+</div>
+
+<div class="p-3 border rounded">
+<div class="font-bold text-sm mb-2">③ 测试策略</div>
+单元测试 74 项；静态检查；真实集群端到端验收；失败场景优先。
+</div>
+
+<div class="p-3 border rounded">
+<div class="font-bold text-sm mb-2">④ 交付与复现</div>
+公开仓库、版本化镜像、相对路径脚本、<code>start.cmd</code> 一键恢复。
+</div>
+
+</div>
+
+<div class="grid grid-cols-2 gap-6 mt-6 text-sm">
+
+<div>
+
+**质量门禁**
+
+- 提交前必须通过 74 项测试与 JS 语法检查
+- 面板与服务必须经真实快照验证，不接受“看起来对”
+- 版本号同时写入 <code>pyproject.toml</code>、镜像标签与部署清单
+
+</div>
+
+<div>
+
+**风险与对策**
+
+- 单机资源有限 → 限制副本与镜像大小，PVC 仅 64 MiB
+- 重启后 SQLite 初始化慢 → 启动器等待真实就绪，不凭容器 Running
+- 演示不确定 → 固定脚本 + 可重复的故障注入流程
+
+</div>
+
+</div>
+
+---
+
+# 系统总体架构
+
+<img src="/img/diagrams/01-architecture.png" class="w-full mt-2 rounded border border-slate-200" />
+
+<div class="grid grid-cols-3 gap-4 mt-3 text-xs text-slate-600">
+
+<div><b>展示层</b>：面板只读快照；Headlamp 只读资源。</div>
+
+<div><b>控制面</b>：主星竞争 Lease，只有 leader 下发命令。</div>
+
+<div><b>数据面</b>：九颗小星各自持有 PVC，分块回传。</div>
+
+</div>
+
+---
+
+# 集群架构：从笔记本到 K3s
+
+<img src="/img/diagrams/02-cluster.png" class="w-full mt-1 rounded border border-slate-200" />
+
+<div class="mt-3 grid grid-cols-4 gap-3 text-xs">
+
+<div class="p-2 rounded bg-slate-100"><b>Node</b>：虚拟主机，这里是 k3d 启动的 4 个容器（1 server + 3 agent）。</div>
+
+<div class="p-2 rounded bg-slate-100"><b>Pod</b>：最小调度单元，每颗卫星一个 Pod。</div>
+
+<div class="p-2 rounded bg-slate-100"><b>Namespace</b>：<code>multi-star</code>，隔离业务对象。</div>
+
+<div class="p-2 rounded bg-slate-100"><b>Service</b>：稳定 DNS，屏蔽 Pod IP 变化。</div>
+
+</div>
+
+<div class="tiny mt-3">K3s 默认使用 SQLite（kine）作为数据存储，不需要单独部署 etcd。</div>
+
+---
+
+# 资源全景：Headlamp 里的真实集群（1/2）
+
+<div class="grid grid-cols-2 gap-4 mt-2">
+
+<figure>
+<img src="/img/headlamp/00-map-home.png" class="w-full rounded border border-slate-300" />
+<figcaption>Map 视图按 Namespace 分组：multi-star 下是 small-sat、main-sat 与 dashboard。</figcaption>
+</figure>
+
+<figure>
+<img src="/img/headlamp/04-pods.png" class="w-full rounded border border-slate-300" />
+<figcaption>Namespace 之下的 Pod 列表：3 主星、9 小星、1 面板代理。</figcaption>
+</figure>
+
+</div>
+
+<div class="tiny mt-3">节点 4/4 就绪、Pod 17/17 运行；图中重启计数来自多次版本迭代，而非当前故障。</div>
+
+---
+
+# 资源全景（2/2）：逐层展开到实例
+
+<div class="grid grid-cols-2 gap-4 mt-2">
+
+<figure>
+<img src="/img/headlamp/07-map-small-sat.png" class="w-full rounded border border-slate-300" />
+<figcaption>small-sat：StatefulSet → 9 个 Pod → 9 个 PVC，另有一个 Service。</figcaption>
+</figure>
+
+<figure>
+<img src="/img/headlamp/08-map-main-sat.png" class="w-full rounded border border-slate-300" />
+<figcaption>main-sat：3 个 Pod、3 个 PVC，并通过两个 Service 暴露状态与主控入口。</figcaption>
+</figure>
+
+</div>
+
+<div class="mt-3 text-sm">
+
+**为什么用 StatefulSet**：卫星需要稳定身份（<code>small-sat-0</code> 永远是同一颗星）、稳定存储（PVC 跟随序号）与有序滚动更新；Deployment 无法保证这三点。
+
+</div>
+
+---
+
+# 每颗“虚拟卫星”由什么构成
+
+<div class="grid grid-cols-2 gap-5 mt-2 text-sm">
+
+<div>
+
+<figure>
+<img src="/img/headlamp/09-small-sat-container.png" class="w-full rounded border border-slate-300" />
+<figcaption>小星容器：镜像 <code>multi-star-satellite:0.2.0</code>，环境变量注入身份与容量。</figcaption>
+</figure>
+
+</div>
+
+<div>
+
+**一个 Pod = 一个业务容器 + 一个数据卷**
+
+- 容器端口：小星 8080，主星 8081
+- 环境变量：<code>SATELLITE_ID</code> 取 Pod 名；<code>SNAPSHOT_PATH=/data/snapshot.json</code>
+- 请求 / 上限：小星 20m/32Mi → 500m/256Mi；主星 50m/64Mi → 500m/512Mi
+- 数据卷：每 Pod 一块 64 MiB PVC，挂载到 <code>/data</code>
+- 探针：就绪 2 s 周期，存活 10 s 周期
+
+</div>
+
+</div>
+
+<div class="tiny mt-2">注：Pod 是 Kubernetes 的调度单位，不是“节点”；节点是承载 Pod 的虚拟主机（k3d 容器）。</div>
+
+---
+
+# 调度机制：租约、围栏与接管
+
+<img src="/img/diagrams/03-scheduling.png" class="w-full mt-1 rounded border border-slate-200" />
+
+<div class="grid grid-cols-3 gap-4 mt-2 text-xs">
+
+<div><b>Lease</b>：<code>multi-star-control</code> 决定唯一主控。</div>
+
+<div><b>epoch</b>：每次接管单调递增，旧 epoch 命令被拒绝。</div>
+
+<div><b>command_id</b>：幂等键，重复投递只生效一次。</div>
+
+</div>
+
+---
+
+# 运行模式与任务流程
+
+<img src="/img/diagrams/04-modes.png" class="w-full mt-1 rounded border border-slate-200" />
+
+<div class="mt-2 text-sm">
+
+- 模式切换必须先通过前置校验：健康小星 ≥ 2、没有 UNKNOWN 在途任务
+- <code>FIXED_SOURCE</code> 只能由未过期事件进入；事件到期自动回退 <code>SURVEY</code>
+- 每次切换或重构都会生成新的 <code>plan_version</code>，旧计划不会被“改写”
+
+</div>
+
+---
+
+# 数据流与通信拓扑
+
+<img src="/img/diagrams/05-dataflow.png" class="w-full mt-1 rounded border border-slate-200" />
+
+<div class="grid grid-cols-3 gap-4 mt-2 text-xs">
+
+<div><b>小星 → 主控</b>：状态轮询与分块上传，只有出站 HTTP。</div>
+
+<div><b>主控之间</b>：不直接互连，靠 Lease 与 ConfigMap 协调。</div>
+
+<div><b>面板</b>：只读 <code>/api/snapshot</code>，无 leader 时明确返回 503。</div>
+
+</div>
+
+---
+
+# 阵列构型与成像指标
+
+<img src="/img/panel/00-formation-preview.png" class="w-full mt-1 rounded border border-slate-200" />
+
+<div class="grid grid-cols-3 gap-4 mt-2 text-xs text-slate-600">
+
+<div><b>构型</b>：环形 / Y 形 / 螺旋，半径 5 km，9 星共 36 条基线。</div>
+
+<div><b>uv 覆盖</b>：远场采样加共轭点，中心空洞与最大半径决定分辨率。</div>
+
+<div><b>PSF</b>：dirty beam 的峰值旁瓣与 FWHM，用于比较不同构型。</div>
+
+</div>
+
+---
+
+# 测试体系与总览
+
+<div class="grid grid-cols-4 gap-4 mt-6 text-center">
+
+<div class="p-4 border rounded">
+<div class="text-3xl font-bold text-teal-700">74</div>
+<div class="text-xs mt-1">单元与服务测试</div>
+</div>
+
+<div class="p-4 border rounded">
+<div class="text-3xl font-bold text-teal-700">3</div>
+<div class="text-xs mt-1">端到端验收场景</div>
+</div>
+
+<div class="p-4 border rounded">
+<div class="text-3xl font-bold text-teal-700">9+3</div>
+<div class="text-xs mt-1">小星 / 主星实例</div>
+</div>
+
+<div class="p-4 border rounded">
+<div class="text-3xl font-bold text-teal-700">1 s</div>
+<div class="text-xs mt-1">面板快照周期</div>
+</div>
+
+</div>
+
+<div class="mt-8 text-sm">
+
+**四类实测**（本页之后逐一给出界面与结果）
+
+1. 主星故障：暂停当前主控 22 s，验证接管与 epoch 递增
+2. 小星故障：注入 / 恢复，验证健康数、基线与构型重构
+3. 天文事件：提交事件，验证自动进入定源模式与去重
+4. 常规功能：模式切换与任务重分配，验证 plan_version 单调
+
+</div>
+
+---
+
+# 测试一：主星故障与接管
+
+<div class="grid grid-cols-2 gap-4 mt-1">
+
+<figure>
+<img src="/img/panel/01-initial.png" class="w-full rounded border border-slate-300" />
+<figcaption>切换前：主控 main-sat-0，epoch 16，plan 161。</figcaption>
+</figure>
+
+<figure>
+<img src="/img/panel/02-failover-after.png" class="w-full rounded border border-slate-300" />
+<figcaption>切换后：主控 main-sat-1，epoch 17，plan 161；旧主恢复后不再抢回。</figcaption>
+</figure>
+
+</div>
+
+<div class="mt-3 text-sm">
+
+点击“暂停当前主控 22 秒”后，原主控停止续约与下发；租约到期后由其他主星接管。切换时间约 15–16 s，取决于租约与轮询周期。
+
+</div>
+
+---
+
+# 测试一：接管日志与围栏效果
+
+<div class="grid grid-cols-5 gap-4 mt-2">
+
+<div class="col-span-3">
+
+<img src="/img/panel/03-failover-log.png" class="w-full rounded border border-slate-300" />
+
+</div>
+
+<div class="col-span-2 text-sm">
+
+**日志证据**
+
+- <code>leader epoch changed; plan 161</code>：接管触发重构
+- 旧主控恢复后仍以 epoch 16 下发，被小星以 epoch 围栏拒绝
+- 面板始终只有一个 leader，未出现双主控写状态
+
+<br>
+
+**为什么不会脑裂**
+
+- Lease 由 apiserver 保证原子性
+- 每次续约前检查 holder 身份
+- 命令携带 epoch，执行端只接受不低于本地最高 epoch 的命令
+
+</div>
+
+</div>
+
+---
+
+# 测试二：小星故障注入（操作与确认）
+
+<div class="grid grid-cols-2 gap-5 mt-2">
+
+<figure>
+<img src="/img/panel/04-fault-armed.png" class="w-full rounded border border-slate-300" />
+<figcaption>页面内二次确认：按钮变为“再次点击确认：注入故障”，15 s 内有效。</figcaption>
+</figure>
+
+<figure>
+<img src="/img/panel/05-fault-result.png" class="w-full rounded border border-slate-300" />
+<figcaption>注入结果：健康 failed、基线 36→28；状态区只显示关键字段。</figcaption>
+</figure>
+
+</div>
+
+<div class="mt-3 text-sm">
+
+早期版本使用浏览器原生 <code>confirm</code>，会阻塞自动化并打断演示；现改为页面内二次确认，既保留防误触，也能被脚本稳定复现。
+
+</div>
+
+---
+
+# 测试二：故障后的阵列重构与恢复
+
+<div class="grid grid-cols-2 gap-5 mt-2">
+
+<figure>
+<img src="/img/panel/06-fault-array.png" class="w-full rounded border border-slate-300" />
+<figcaption>故障态：9 颗在编，健康 8；UV 采样 28 点 + 28 共轭。</figcaption>
+</figure>
+
+<figure>
+<img src="/img/panel/07-fault-recovered.png" class="w-full rounded border border-slate-300" />
+<figcaption>恢复后：健康 9，基线回到 36；恢复不改写历史任务。</figcaption>
+</figure>
+
+</div>
+
+<div class="mt-2 text-xs text-slate-600">
+
+故障星用红色标出；健康数从 9 降为 8，基线从 36 降为 28（C(8,2)=28）。恢复采用显式操作，避免“Pod 重启即自动痊愈”掩盖真实故障。
+
+</div>
+
+---
+
+# 测试三：天文事件触发定源观测
+
+<div class="grid grid-cols-2 gap-5 mt-2">
+
+<figure>
+<img src="/img/panel/08-event-submit.png" class="w-full rounded border border-slate-300" />
+<figcaption>提交事件：频率 110 MHz、通量 18 Jy、谱指数 −0.7，请求已接受。</figcaption>
+</figure>
+
+<figure>
+<img src="/img/panel/09-fixed-source.png" class="w-full rounded border border-slate-300" />
+<figcaption>模式自动进入 FIXED_SOURCE，生成新计划版本。</figcaption>
+</figure>
+
+</div>
+
+<div class="mt-2 text-sm">
+
+事件携带 <code>event_id / target_id / 频率 / 通量 / 置信度 / 谱指数 / 有效期</code>；相同 <code>event_id</code> 重复提交会被去重，不会反复抬升计划版本。面板右侧的合成频谱仅用于输入预览，明确标注“非快照实测”。
+
+</div>
+
+---
+
+# 测试四：模式切换与任务分配
+
+<div class="grid grid-cols-2 gap-5 mt-2">
+
+<figure>
+<img src="/img/panel/10-calibration.png" class="w-full rounded border border-slate-300" />
+<figcaption>切换到 CALIBRATION：标定任务替换巡天任务，plan 166→167。</figcaption>
+</figure>
+
+<figure>
+<img src="/img/panel/11-mode-sequence.png" class="w-full rounded border border-slate-300" />
+<figcaption>审计序列：event accepted → FIXED_SOURCE → CALIBRATION → SURVEY，版本逐次递增。</figcaption>
+</figure>
+
+</div>
+
+<div class="mt-2 text-xs text-slate-600">
+
+每次模式切换都会重新生成所有在编小星的任务，未执行完的任务按 plan_version 作废；已 verified 的任务保留在各自 PVC 的任务历史中。
+
+</div>
+
+---
+
+# 工程化实践
+
+<div class="grid grid-cols-2 gap-6 mt-3 text-sm">
+
+<div>
+
+**可移植**
+
+- 30 余个脚本由自身位置推导仓库根目录
+- <code>config/runtime.json</code> 只保存相对路径
+- <code>start.cmd</code> / <code>stop.cmd</code> 用 <code>wslpath</code> 解析当前检出位置
+- 公开仓库不含任何主机绝对路径
+
+</div>
+
+<div>
+
+**可运维**
+
+- 面板暴露 read-only 快照接口，Headlamp 观察资源
+- 审计日志连续去重，500 条环形缓冲不再被刷屏
+- 状态区只显示关键字段，避免整段 JSON 撑开页面
+- 部署脚本幂等，失败停在上一步并打印真实原因
+
+</div>
+
+</div>
+
+<div class="mt-6 p-3 rounded bg-slate-100 text-sm">
+
+**版本与交付**：0.3.2 为本次汇报版本；镜像 <code>multi-star-main:0.3.2</code> 与小星镜像 <code>multi-star-satellite:0.2.0</code> 分离，避免小星无谓重启。
+
+</div>
+
+---
+
+# 局限与后续工作
+
+<div class="grid grid-cols-2 gap-8 mt-4 text-sm">
+
+<div>
+
+### 当前局限
+
+- 阵列几何为简化远场模型，未含近场与电离层扰动
+- 调度策略以轮询与固定优先级为主，未做能耗/可见性优化
+- 单机 K3s 无法验证真实星间链路时延与丢包
+- 镜像与 PVC 规模受限，尚未做百星级压测
+
+</div>
+
+<div>
+
+### 后续计划
+
+- 引入可见性与能量约束，做多目标调度
+- 对接 OSKAR 做高保真成像复核
+- 增加网络分区与时钟漂移的注入测试
+- 将面板与调度器拆分，支持多集群联邦
+
+</div>
+
+</div>
+
+---
+
+# 结论
+
+<div class="mt-6 text-base leading-8">
+
+1. 用**真实容器编排**承载虚拟卫星，把选主、幂等、故障恢复做成可验证机制，而不是纸面流程。
+2. 通过 **Lease + epoch + plan_version** 形成一套简单但有效的围栏体系：同一时刻只有一个写者，旧主控无法“复活”。
+3. 面板、Headlamp 与审计日志构成三层可观测性，测试过程可以被截图、复现与审计。
+4. 74 项测试与四类实测表明：系统在故障、事件与模式切换下行为可预测，计划版本始终单调。
+
+</div>
+
+<div class="mt-10 p-4 rounded bg-teal-50 border-l-4 border-teal-600 text-sm">
+
+**一句话**：把分布式系统最难的部分做真，把天文业务做成可插拔的语义层。
+
+</div>
+
+---
+
+# 参考文献
+
+<div class="text-xs leading-7">
+
+[1] van Haarlem, M. P., Wise, M. W., Gunst, A. W., et al. (2013). **LOFAR: The LOw-Frequency ARray**. *Astronomy & Astrophysics*, 556, A2. DOI: [10.1051/0004-6361/201220873](https://doi.org/10.1051/0004-6361/201220873)
+
+[2] Ferrari, B., Cordeau, J.-F., Delorme, M., Iori, M., & Orosei, R. (2024). **Satellite Scheduling Problems: A survey of applications in Earth and outer space observation**. *Computers & Operations Research*, 173, 106875. DOI: [10.1016/j.cor.2024.106875](https://doi.org/10.1016/j.cor.2024.106875)
+
+[3] Thompson, A. R., Moran, J. M., & Swenson, G. W. (2017). **Interferometry and Synthesis in Radio Astronomy** (3rd ed.). Springer. DOI: [10.1007/978-3-319-44431-4](https://doi.org/10.1007/978-3-319-44431-4)
+
+[4] Kubernetes Documentation. **Leases** (coordination.k8s.io). https://kubernetes.io/docs/concepts/architecture/leases/
+
+[5] K3s Documentation. **Lightweight Kubernetes**. https://docs.k3s.io/
+
+[6] k3d Documentation. **k3s in Docker**. https://k3d.io/
+
+[7] Headlamp. **Kubernetes UI**. https://headlamp.dev/
+
+</div>
+
+<div class="tiny mt-4">以上文献均可在 DOI 或官方文档站点检索；阵列与调度结论不依赖未公开数据。</div>
+
+---
+
+# 开源地址
+
+<div class="mt-10 text-center">
+
+<div class="text-sm text-slate-500 mb-2">项目源码（公开仓库）</div>
+
+<div class="text-2xl font-mono text-teal-700">github.com/SouthskyVela/multi-star-project</div>
+
+<div class="mt-6 text-sm text-slate-600">
+版本 0.3.2 · 74 项测试 · 单机 K3s 可复现
+</div>
+
+<div class="mt-16 text-3xl font-bold">谢谢，欢迎提问</div>
+
+</div>

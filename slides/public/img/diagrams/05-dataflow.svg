@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="820" viewBox="0 0 1600 820">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#5b6776"/>
+    </marker>
+    <marker id="arrow-teal" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="820" fill="#ffffff"/>
+<text x="60" y="62" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="30" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">数据流与通信拓扑</text><text x="60" y="94" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">小星只与主控通信；主控之间通过 Lease 与共享状态协调；面板只读快照</text>
+<rect x="50" y="170" width="300" height="560" rx="12" ry="12" fill="#f1f5f9" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="70" y="200" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">小卫星 ×9（Pod）</text>
+<rect x="70" y="220" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="248" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-0</text>
+<text x="250" y="248" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="70" y="276" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="304" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-1</text>
+<text x="250" y="304" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="70" y="332" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="360" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-2</text>
+<text x="250" y="360" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="70" y="388" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="416" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-3</text>
+<text x="250" y="416" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="70" y="444" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="472" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-4</text>
+<text x="250" y="472" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="70" y="500" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="528" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-5</text>
+<text x="250" y="528" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="70" y="556" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="584" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-6</text>
+<text x="250" y="584" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="70" y="612" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="640" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-7</text>
+<text x="250" y="640" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="70" y="668" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="84" y="696" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">small-sat-8</text>
+<text x="250" y="696" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="end" opacity="1.0">8080</text>
+<rect x="470" y="300" width="320" height="300" rx="14" ry="14" fill="#e6f4f1" stroke="#0f766e" stroke-width="2"/>
+<text x="490" y="336" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="18" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">当前主控 main-sat-1</text>
+<text x="490" y="368" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="14" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">调度器 / 计划生成</text>
+<text x="490" y="396" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="14" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">命令围栏与去重</text>
+<text x="490" y="424" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="14" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">状态机与审计</text>
+<text x="490" y="452" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="14" fill="#1f2937" font-weight="normal" text-anchor="start" opacity="1.0">阵列引擎 uv / PSF</text>
+<text x="490" y="500" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">POST /command</text>
+<text x="490" y="524" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">GET /status</text>
+<rect x="470" y="640" width="150" height="80" rx="10" ry="10" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="545" y="672" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="middle" opacity="1.0">main-sat-0</text>
+<text x="545" y="696" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="middle" opacity="1.0">follower</text>
+<rect x="640" y="640" width="150" height="80" rx="10" ry="10" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="715" y="672" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="middle" opacity="1.0">main-sat-2</text>
+<text x="715" y="696" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="middle" opacity="1.0">follower</text>
+<rect x="920" y="240" width="300" height="180" rx="12" ry="12" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="940" y="272" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="16" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">dashboard 代理</text>
+<text x="940" y="302" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">发现 leader → 转发</text>
+<text x="940" y="326" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">无唯一 leader 时返回 503</text>
+<text x="940" y="360" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#0f766e" font-weight="normal" text-anchor="start" opacity="1.0">浏览器 · 1 s 轮询</text>
+<text x="940" y="384" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#0f766e" font-weight="normal" text-anchor="start" opacity="1.0">Headlamp · 4 s 刷新</text>
+<rect x="920" y="460" width="300" height="70" rx="10" ry="10" fill="#fdf1e3" stroke="#b45309" stroke-width="1.5"/>
+<text x="940" y="490" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">Lease multi-star-control</text>
+<text x="940" y="514" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">holder / epoch / 续约时间</text>
+<rect x="920" y="550" width="300" height="70" rx="10" ry="10" fill="#fdf1e3" stroke="#b45309" stroke-width="1.5"/>
+<text x="940" y="580" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">ConfigMap 共享状态</text>
+<text x="940" y="604" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">计划 / 事件 / 审计日志</text>
+<rect x="920" y="650" width="300" height="70" rx="10" ry="10" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
+<text x="940" y="680" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">PVC ×12 / 镜像仓库</text>
+<text x="940" y="704" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="11" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">状态快照 64 MiB / 镜像 5001</text>
+<line x1="350" y1="380" x2="466" y2="380" stroke="#0f766e" stroke-width="1.8" marker-end="url(#arrow-teal)"/>
+<text x="360" y="368" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#0f766e" font-weight="normal" text-anchor="start" opacity="1.0">命令</text>
+<line x1="466" y1="430" x2="350" y2="430" stroke="#5b6776" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="360" y="452" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">状态 / 上传</text>
+<line x1="790" y1="352" x2="912" y2="352" stroke="#0f766e" stroke-width="1.8" marker-end="url(#arrow-teal)"/>
+<text x="846" y="340" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#0f766e" font-weight="normal" text-anchor="start" opacity="1.0">快照</text>
+<line x1="912" y1="392" x2="790" y2="392" stroke="#5b6776" stroke-width="1.6" marker-end="url(#arrow)"/>
+<text x="846" y="414" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">查询</text>
+<line x1="640" y1="520" x2="916" y2="495" stroke="#5b6776" stroke-width="1.4" marker-end="url(#arrow)"/>
+<text x="700" y="486" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">续约 / 选主</text>
+<line x1="640" y1="590" x2="916" y2="585" stroke="#5b6776" stroke-width="1.4" marker-end="url(#arrow)"/>
+<text x="716" y="574" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="12" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">持久化</text>
+<line x1="545" y1="640" x2="545" y2="604" stroke="#5b6776" stroke-width="1.2" marker-end="url(#arrow)"/>
+<line x1="715" y1="640" x2="715" y2="604" stroke="#5b6776" stroke-width="1.2" marker-end="url(#arrow)"/>
+<text x="470" y="780" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="13" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">所有小星仅有 HTTPS 出站到主控；主控之间不直接互连，靠 Lease 决定唯一写者。</text>
+</svg>
