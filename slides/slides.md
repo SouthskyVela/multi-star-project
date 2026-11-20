@@ -587,7 +587,7 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 # 演示：主控故障切换（8× 加速）
 
-<video controls style="width:100%;max-height:62vh;">
+<video controls preload="metadata" poster="/media/clips/01-poster.jpg?v=2" style="width:100%;max-height:62vh;">
 
 <source src="/media/clips/01-failover-8x.mp4" type="video/mp4">
 
@@ -647,7 +647,7 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 # 演示：小星故障注入与恢复（8× 加速）
 
-<video controls style="width:100%;max-height:62vh;">
+<video controls preload="metadata" poster="/media/clips/02-poster.jpg?v=2" style="width:100%;max-height:62vh;">
 
 <source src="/media/clips/02-fault-8x.mp4" type="video/mp4">
 
@@ -689,7 +689,7 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 # 演示：天文事件触发定源（8× 加速）
 
-<video controls style="width:100%;max-height:62vh;">
+<video controls preload="metadata" poster="/media/clips/03-poster.jpg?v=2" style="width:100%;max-height:62vh;">
 
 <source src="/media/clips/03-event-8x.mp4" type="video/mp4">
 
@@ -731,7 +731,7 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 # 演示：模式切换与任务重分配（8× 加速）
 
-<video controls style="width:100%;max-height:62vh;">
+<video controls preload="metadata" poster="/media/clips/04-poster.jpg?v=2" style="width:100%;max-height:62vh;">
 
 <source src="/media/clips/04-mode-8x.mp4" type="video/mp4">
 
