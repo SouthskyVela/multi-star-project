@@ -2,7 +2,7 @@
 theme: default
 title: 空间天文小卫星群相关调度机制与算法开发
 info: |
-  课程作业汇报 · Multi-Star 0.3.2
+  课程作业汇报 · Multi-Star 0.3.4
 class: text-slate-800
 transition: fade
 mdc: true
@@ -14,11 +14,11 @@ colorSchema: light
 # 空间天文小卫星群相关调度机制与算法开发
 
 <div class="mt-6 text-slate-500">
-课程作业汇报 · Multi-Star / <code>multi-star-sim</code> 0.3.2
+课程作业汇报 · Multi-Star / <code>multi-star-sim</code> 0.3.4
 </div>
 
 <div class="pt-12 text-sm text-slate-500">
-汇报人：李达航　　学号：23009101011　　2026 年 11 月
+汇报人：李达航（23009101011）　王振鹏（22009101331）　　2026 年 11 月
 
 <div class="mt-2 text-xs text-slate-400">开源地址：github.com/SouthskyVela/multi-star-project</div>
 </div>
@@ -378,6 +378,29 @@ Lease 决定唯一主控；epoch 单调递增，旧主控命令被拒绝；comma
   <img src="/img/diagrams/05-dataflow.png" class="max-w-full max-h-full object-contain" />
 </div>
 
+---
+
+<div class="absolute inset-0 flex items-center justify-center bg-white">
+  <img src="/img/diagrams/06-operation-flow.png" class="max-w-full max-h-full object-contain" />
+</div>
+
+<!--
+操作流：打开面板 → 选择目标 → 选择操作 → 页面内二次确认（15 s）→ 主控校验 → 下发命令 → 快照刷新 → 反馈与审计。
+一致性：command_id 幂等、epoch 围栏、plan_version 只增不减。
+-->
+
+---
+
+<div class="absolute inset-0 flex items-center justify-center bg-white">
+  <img src="/img/diagrams/07-fault-response.png" class="max-w-full max-h-full object-contain" />
+</div>
+
+<!--
+主控故障：停止续约 → Lease 过期 → 其他主星接管（epoch+1）→ 重建计划。
+小星故障：健康检查失败 → 标记 FAILED → 计划重构（plan+1）→ 阵列重构。
+恢复后健康检查通过、重新纳入、plan 再 +1，全过程写入审计。
+-->
+
 <!--
 小星只向主控出站；主控之间靠 Lease 与 ConfigMap 协调；面板只读快照，无 leader 时返回 503。
 -->
@@ -562,6 +585,18 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 ---
 
+# 演示：主控故障切换（8× 加速）
+
+<video controls style="width:100%;max-height:62vh;">
+
+<source src="/media/clips/01-failover-8x.mp4" type="video/mp4">
+
+</video>
+
+<div class="tiny mt-2">完整录屏：<code>public/media/full/01-failover.mp4</code>（105 s）。</div>
+
+---
+
 # 测试二：小星故障注入（操作与确认）
 
 <div class="grid grid-cols-2 gap-5 mt-2">
@@ -610,6 +645,24 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 ---
 
+# 演示：小星故障注入与恢复（8× 加速）
+
+<video controls style="width:100%;max-height:62vh;">
+
+<source src="/media/clips/02-fault-8x.mp4" type="video/mp4">
+
+</video>
+
+<div class="grid grid-cols-2 gap-4 mt-2 text-xs text-slate-600">
+
+<div>选择 small-sat-5 → 二次确认注入 → 健康数 9→8、基线 36→28 → 显式恢复回到 9/36。</div>
+
+<div class="text-right">完整录屏：<code>public/media/full/02-fault-injection-v2.mp4</code></div>
+
+</div>
+
+---
+
 # 测试三：天文事件触发定源观测
 
 <div class="grid grid-cols-2 gap-5 mt-2">
@@ -629,6 +682,24 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 <div class="mt-2 text-sm">
 
 事件携带 <code>event_id / target_id / 频率 / 通量 / 置信度 / 谱指数 / 有效期</code>；相同 <code>event_id</code> 重复提交会被去重，不会反复抬升计划版本。面板右侧的合成频谱仅用于输入预览，明确标注“非快照实测”。
+
+</div>
+
+---
+
+# 演示：天文事件触发定源（8× 加速）
+
+<video controls style="width:100%;max-height:62vh;">
+
+<source src="/media/clips/03-event-8x.mp4" type="video/mp4">
+
+</video>
+
+<div class="grid grid-cols-2 gap-4 mt-2 text-xs text-slate-600">
+
+<div>填写事件（110 MHz、18 Jy、谱指数 −0.7）→ 提交 → 自动进入 FIXED_SOURCE，并生成新的计划版本。</div>
+
+<div class="text-right">完整录屏：<code>public/media/full/03-event-final.mp4</code></div>
 
 </div>
 
@@ -658,6 +729,24 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 ---
 
+# 演示：模式切换与任务重分配（8× 加速）
+
+<video controls style="width:100%;max-height:62vh;">
+
+<source src="/media/clips/04-mode-8x.mp4" type="video/mp4">
+
+</video>
+
+<div class="grid grid-cols-2 gap-4 mt-2 text-xs text-slate-600">
+
+<div>CALIBRATION ↔ SURVEY 切换，计划版本逐次递增，审计事件流同步记录。</div>
+
+<div class="text-right">完整录屏：<code>public/media/full/04-mode-switch.mp4</code></div>
+
+</div>
+
+---
+
 # 工程化实践、局限与后续
 
 <div class="grid grid-cols-2 gap-8 mt-4 text-[0.95rem]">
@@ -669,7 +758,7 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 - 30 余个脚本由自身位置推导仓库根目录，配置只存相对路径
 - 面板只读快照，Headlamp 观察资源；审计日志连续去重
 - 部署脚本幂等，失败停在上一步并打印真实原因
-- 镜像分离：<code>main:0.3.2</code> 与 <code>satellite:0.2.0</code>，避免小星无谓重启
+- 镜像分离：<code>main:0.3.4</code> 与 <code>satellite:0.2.0</code>，避免小星无谓重启
 
 </div>
 
@@ -688,7 +777,7 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 <div class="mt-6 p-3 rounded bg-slate-100 text-xs text-slate-600">
 
-版本与交付：0.3.2 为本次汇报版本；小星镜像仍为 0.2.0，主星与面板按需升级。
+版本与交付：0.3.4 为本次汇报版本；小星镜像仍为 0.2.0，主星与面板按需升级。
 
 </div>
 
@@ -746,7 +835,7 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 <div class="text-2xl font-mono text-teal-700"><a href="https://github.com/SouthskyVela/multi-star-project" target="_blank">github.com/SouthskyVela/multi-star-project</a></div>
 
 <div class="mt-6 text-sm text-slate-600">
-版本 0.3.2 · 74 项测试 · 单机 K3s 可复现
+版本 0.3.4 · 74 项测试 · 单机 K3s 可复现
 </div>
 
 <div class="mt-16 text-3xl font-bold">谢谢，欢迎提问</div>

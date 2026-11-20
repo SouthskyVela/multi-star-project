@@ -8,7 +8,7 @@
     </marker>
   </defs>
   <rect width="1600" height="820" fill="#ffffff"/>
-<text x="60" y="62" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="30" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">数据流与通信拓扑</text><text x="60" y="94" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">小星只与主控通信；主控之间通过 Lease 与共享状态协调；面板只读快照</text>
+<text x="60" y="62" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="30" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">系统信息流与通信拓扑</text><text x="60" y="94" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#5b6776" font-weight="normal" text-anchor="start" opacity="1.0">小星只与主控通信；主控之间通过 Lease 与共享状态协调；面板只读快照</text>
 <rect x="50" y="170" width="300" height="560" rx="12" ry="12" fill="#f1f5f9" stroke="#b9c3ce" stroke-width="1.5"/>
 <text x="70" y="200" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="15" fill="#1f2937" font-weight="bold" text-anchor="start" opacity="1.0">小卫星 ×9（Pod）</text>
 <rect x="70" y="220" width="260" height="44" rx="8" ry="8" fill="#ffffff" stroke="#b9c3ce" stroke-width="1.5"/>
