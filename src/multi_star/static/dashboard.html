@@ -1123,7 +1123,7 @@
       confirmTimers.set(button.id, setTimeout(() => {
         button.dataset.armed = 'false';
         button.textContent = original;
-      }, 15000));
+      }, 30000));
       return false;
     }
 
@@ -1133,7 +1133,7 @@
       const status = byId('fault-status');
       if (injecting && !requireSecondClick(byId('fault-inject'), '注入故障')) {
         status.className = 'control-status';
-        status.textContent = `再次点击“注入故障”以确认向 ${satelliteId} 注入；15 秒后自动取消。`;
+        status.textContent = `再次点击“注入故障”以确认向 ${satelliteId} 注入；30 秒后自动取消。`;
         return;
       }
       const buttons = [byId('fault-inject'), byId('fault-recover')];
@@ -1158,7 +1158,7 @@
       const status = byId('main-status');
       if (!requireSecondClick(button, '暂停主控 22 秒')) {
         status.className = 'control-status';
-        status.textContent = '再次点击按钮以确认暂停；15 秒后自动取消。';
+        status.textContent = '再次点击按钮以确认暂停；30 秒后自动取消。';
         return;
       }
       button.disabled = true;

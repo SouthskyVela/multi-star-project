@@ -113,6 +113,10 @@ class PlanRevision:
         )
 
 
+# Keep the persisted task history bounded: the whole state lives in one ConfigMap.
+TASK_HISTORY_LIMIT = 60
+
+
 @dataclass
 class SatelliteView:
     satellite_id: str
@@ -133,7 +137,7 @@ class SatelliteView:
             "position_m": list(self.position_m),
             "task_state": self.task_state,
             "current_command_id": self.current_command_id,
-            "tasks": self.tasks,
+            "tasks": dict(list(self.tasks.items())[-TASK_HISTORY_LIMIT:]),
         }
 
     @classmethod

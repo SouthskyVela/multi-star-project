@@ -8,7 +8,13 @@ from pathlib import Path
 from unittest.mock import Mock
 from dataclasses import FrozenInstanceError
 
-from multi_star.coordinator import Coordinator, ObservationMode, ScienceEvent
+from multi_star.coordinator import (
+    TASK_HISTORY_LIMIT,
+    Coordinator,
+    ObservationMode,
+    SatelliteView,
+    ScienceEvent,
+)
 from multi_star.lease import LeaseState, _format_rfc3339
 from multi_star.main_satellite_service import MainSatelliteServer, _event_from_request, _event_from_request
 from multi_star.satellite import Command, CommandKind, HealthState, TaskState
@@ -372,6 +378,17 @@ class MainServiceSnapshotTest(unittest.TestCase):
             self.assertEqual(duplicate_version, version)
         finally:
             server.server_close()
+
+
+class TaskHistoryBoundTest(unittest.TestCase):
+    def test_persisted_tasks_keep_only_the_latest_window(self) -> None:
+        view = SatelliteView("small-sat-0")
+        for index in range(TASK_HISTORY_LIMIT + 20):
+            view.tasks[f"cmd-{index:03d}"] = {"state": "verified"}
+        payload = view.to_dict()["tasks"]
+        self.assertEqual(len(payload), TASK_HISTORY_LIMIT)
+        self.assertIn(f"cmd-{TASK_HISTORY_LIMIT + 19:03d}", payload)
+        self.assertNotIn("cmd-000", payload)
 
 
 if __name__ == "__main__":
