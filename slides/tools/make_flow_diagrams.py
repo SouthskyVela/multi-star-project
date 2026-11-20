@@ -13,53 +13,82 @@ def diamond(cx, cy, w, h, fill=WHITE, stroke=AMBER, label=""):
 
 
 def operation_flow() -> str:
-    b = [title("系统操作流：从用户点击到状态回读", "破坏性操作在页面内二次确认，窗口 15 s；请求经主控校验后下发")]
+    b = [title("系统操作流：四类操作的分支与汇合", "公共入口相同，按操作类型分流；破坏性操作需页面内二次确认，事件与模式切换不需要")]
 
-    steps = [
-        (120, 200, "① 打开面板", "浏览器访问 18082，1 s 轮询快照"),
-        (120, 320, "② 选择目标", "主星或 small-sat-0 … 8"),
-        (120, 440, "③ 选择操作", "暂停主控 / 注入 / 恢复 / 提交事件 / 切模式"),
+    common = [
+        (90, "① 打开面板", "浏览器访问 18082"),
+        (450, "② 选择对象", "主星 / small-sat-0…8 / 表单"),
+        (810, "③ 选择操作", "暂停、注入、恢复、事件、模式"),
     ]
-    for x, y, head, sub in steps:
-        b.append(box(x, y, 420, 86, WHITE, LINE, 10))
-        b.append(text(x + 16, y + 34, head, 17, INK, "bold"))
-        b.append(text(x + 16, y + 62, sub, 12, MUTED))
-    for y in (286, 406):
-        b.append(arrow(330, y, 330, y + 32, MUTED, 1.6))
+    for x, head, sub in common:
+        b.append(box(x, 120, 300, 70, WHITE, LINE, 10))
+        b.append(text(x + 16, 150, head, 16, INK, "bold"))
+        b.append(text(x + 16, 174, sub, 11, MUTED))
+    b.append(arrow(392, 155, 446, 155, MUTED, 1.6))
+    b.append(arrow(752, 155, 806, 155, MUTED, 1.6))
 
-    b.append(diamond(330, 620, 300, 110, AMBER_BG, AMBER, "④ 二次确认？"))
-    b.append(arrow(330, 526, 330, 565, MUTED, 1.6))
-    b.append(text(344, 552, "点击一次进入确认态", 11, MUTED))
+    b.append(box(1160, 120, 350, 70, SLATE_BG, LINE, 10, 1.2))
+    b.append(text(1176, 150, "按操作类型分流", 15, INK, "bold"))
+    b.append(text(1176, 174, "A 主控 / B 小星 / C 事件 / D 模式", 11, MUTED))
+    b.append(arrow(1112, 155, 1156, 155, MUTED, 1.6))
 
-    b.append(f'<path d="M180,620 L90,620 L90,483" fill="none" stroke="{AMBER}" '
-             f'stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrow)"/>')
-    b.append(text(96, 600, "超时 15 s / 再点取消", 11, AMBER))
+    branches = [
+        ("A 主控故障测试", 60, AMBER, [
+            ("点击“暂停当前主控 22 秒”", "仅暂停，不销毁 Pod"),
+            ("页面内二次确认（30 s）", "再次点击生效"),
+            ("停止续约与命令下发", "旧主控进入静默"),
+            ("租约过期，其他主星接管", "epoch + 1，重建计划"),
+        ]),
+        ("B 小星故障注入 / 恢复", 440, AMBER, [
+            ("选择 small-sat 与“注入故障”", "下拉框指定目标"),
+            ("页面内二次确认（30 s）", "防止误触"),
+            ("执行器置 FAILED，移出健康集合", "健康 9→8，基线 36→28"),
+            ("计划重构（plan + 1）", "剩余小星重分配任务"),
+            ("点击“恢复故障”", "无需二次确认"),
+            ("健康检查通过，重新纳入", "健康 8→9，plan + 1"),
+        ]),
+        ("C 天文事件提交", 820, TEAL, [
+            ("填写事件字段", "频率 / 通量 / 谱指数 / 有效期"),
+            ("点击“提交事件”", "单次点击，无需确认"),
+            ("event_id 去重", "重复提交不抬版本"),
+            ("进入 FIXED_SOURCE", "plan + 1，事件到期回退"),
+        ]),
+        ("D 运行模式切换", 1200, TEAL, [
+            ("点击 SURVEY / FIXED_SOURCE / CALIBRATION", "顶部模式按钮"),
+            ("前置校验", "健康 ≥ 2，且无 UNKNOWN 任务"),
+            ("切换模式", "plan + 1，任务整体重排"),
+        ]),
+    ]
 
-    b.append(box(600, 580, 300, 80, TEAL_BG, TEAL, 10, 1.6))
-    b.append(text(616, 612, "⑤ 主控校验", 16, INK, "bold"))
-    b.append(text(616, 638, "健康数 / UNKNOWN / epoch", 11, MUTED))
-    b.append(arrow(432, 620, 596, 620, TEAL, 2, "arrow-teal"))
-    b.append(text(470, 606, "是", 12, TEAL))
+    for name, x, color, steps in branches:
+        b.append(box(x, 235, 340, 46, AMBER_BG if color == AMBER else TEAL_BG, color, 8, 1.6))
+        b.append(text(x + 14, 264, name, 14, INK, "bold"))
+        b.append(arrow(x + 170, 193, x + 170, 231, color, 1.6, "arrow-teal" if color == TEAL else "arrow"))
+        y = 300
+        for head, sub in steps:
+            b.append(box(x, y, 340, 52, WHITE, LINE, 8, 1.3))
+            b.append(text(x + 12, y + 22, head, 12, INK, "bold"))
+            b.append(text(x + 12, y + 42, sub, 10, MUTED))
+            y += 64
 
-    b.append(box(960, 580, 280, 80, WHITE, LINE, 10))
-    b.append(text(976, 612, "⑥ 下发命令", 16, INK, "bold"))
-    b.append(text(976, 638, "command_id + epoch + expires_at", 11, MUTED))
-    b.append(arrow(902, 620, 956, 620, TEAL, 1.8, "arrow-teal"))
+    b.append(box(60, 745, 460, 60, SLATE_BG, LINE, 10))
+    b.append(text(76, 772, "④ 快照刷新（1 s）", 14, INK, "bold"))
+    b.append(text(76, 794, "面板读取 /api/snapshot，不读缓存", 10, MUTED))
 
-    b.append(box(1300, 580, 250, 80, WHITE, LINE, 10))
-    b.append(text(1316, 612, "⑦ 快照刷新", 16, INK, "bold"))
-    b.append(text(1316, 638, "面板 1 s / Headlamp 4 s", 11, MUTED))
-    b.append(arrow(1242, 620, 1296, 620, TEAL, 1.8, "arrow-teal"))
+    b.append(box(560, 745, 460, 60, SLATE_BG, LINE, 10))
+    b.append(text(576, 772, "⑤ 结果核对", 14, INK, "bold"))
+    b.append(text(576, 794, "主控 / 健康数 / 基线 / 模式", 10, MUTED))
 
-    b.append(box(1300, 380, 250, 80, WHITE, LINE, 10))
-    b.append(text(1316, 412, "⑧ 反馈与审计", 16, INK, "bold"))
-    b.append(text(1316, 438, "状态区 + 事件流 + 日志", 11, MUTED))
-    b.append(arrow(1425, 578, 1425, 464, TEAL, 1.8, "arrow-teal"))
+    b.append(box(1060, 745, 460, 60, SLATE_BG, LINE, 10))
+    b.append(text(1076, 772, "⑥ 审计与追溯", 14, INK, "bold"))
+    b.append(text(1076, 794, "事件流 + 日志 + 版本号", 10, MUTED))
 
-    b.append(box(600, 760, 950, 90, SLATE_BG, LINE, 10))
-    b.append(text(618, 792, "一致性保证", 14, INK, "bold"))
-    b.append(text(618, 818, "同一 command_id 只生效一次；epoch 低于本地最高值直接拒绝；计划版本只增不减；不可逆变轨不重发。", 12, MUTED))
-    return svg(1600, 900, "\n".join(b))
+    for x, steps in [(60, branches[0][3]), (440, branches[1][3]), (820, branches[2][3]), (1200, branches[3][3])]:
+        y_end = 300 + len(steps) * 64 - 12
+        b.append(arrow(x + 170, y_end + 2, x + 170, 741, MUTED, 1.4))
+    b.append(arrow(524, 775, 556, 775, MUTED, 1.4))
+    b.append(arrow(1024, 775, 1056, 775, MUTED, 1.4))
+    return svg(1600, 860, chr(10).join(b))
 
 
 def fault_response() -> str:

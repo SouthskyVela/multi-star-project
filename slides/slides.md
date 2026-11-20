@@ -18,7 +18,7 @@ colorSchema: light
 </div>
 
 <div class="pt-12 text-sm text-slate-500">
-汇报人：李达航（23009101011）　王振鹏（22009101331）　　2026 年 11 月
+成员：李达航（23009101011）　王振鹏（22009101331）　　2026 年 11 月
 
 <div class="mt-2 text-xs text-slate-400">开源地址：github.com/SouthskyVela/multi-star-project</div>
 </div>
@@ -27,7 +27,7 @@ colorSchema: light
 h1 { font-size: 2.0rem; }
 h2 { font-size: 1.35rem; margin-bottom: 0.6rem; }
  table { font-size: 0.82rem; }
-figcaption { font-size: 0.72rem; color: #64748b; margin-top: 0.35rem; }
+figcaption { font-size: 0.72rem !important; line-height: 1.35 !important; color: #64748b !important; margin-top: 0.35rem; }
 table th:first-child, table td:first-child { white-space: nowrap; }
 .small { font-size: 0.85rem; }
 .tiny { font-size: 0.72rem; color: #64748b; }
@@ -37,36 +37,63 @@ table th:first-child, table td:first-child { white-space: nowrap; }
 
 # 汇报结构
 
-<div class="grid grid-cols-2 gap-8 mt-8 text-sm">
+<div class="grid grid-cols-2 gap-x-10 gap-y-5 mt-6 text-sm">
 
 <div>
 
-**一、问题与方案**
+**一、背景与前期工作** <span class="text-xs text-slate-400">（3–8）</span>
 
 - 选题背景：低频射电、超大视场、小卫星群
-- 研究目标、范围与边界
-- 需求分析与软件工程实施方案
+- 研究目标、边界与最初构想
+- 前期六星编队成像：uv 覆盖、RIME、多工具交叉验证、CASA
 
-**二、系统设计**
+</div>
 
-- 总体架构与集群架构
-- 调度机制、运行模式、数据流
+<div>
+
+**二、目标、需求与实施** <span class="text-xs text-slate-400">（9–10）</span>
+
+- 需求分析与验收口径
+- 软件工程实施方案：迭代、门禁、风险
+
+</div>
+
+<div>
+
+**三、架构与集群** <span class="text-xs text-slate-400">（11–17）</span>
+
+- 总体架构、集群架构、k3d 选型
+- Headlamp 资源全景（总览 / small-sat / main-sat）
+- 虚拟卫星的 Pod 构成
+
+</div>
+
+<div>
+
+**四、调度、流程与阵列** <span class="text-xs text-slate-400">（18–23）</span>
+
+- 调度时序、运行模式、系统信息流
+- 系统操作流、故障响应方案
 - 阵列构型与成像指标
 
 </div>
 
 <div>
 
-**三、实现与验证**
+**五、测试与录屏** <span class="text-xs text-slate-400">（24–34）</span>
 
-- Headlamp 资源全景（逐层展开）
-- Pod 构成与虚拟卫星参数
-- 三类测试与故障注入实测
+- 测试体系与四类实测
+- 主控切换、故障注入、事件触发、模式切换
+- 每类测试配 8× 加速录屏
 
-**四、总结**
+</div>
 
-- 工程化实践与局限
-- 后续工作与参考文献
+<div>
+
+**六、总结** <span class="text-xs text-slate-400">（35–38）</span>
+
+- 工程化实践、局限与后续
+- 结论、参考文献、开源地址
 
 </div>
 
@@ -76,9 +103,9 @@ table th:first-child, table td:first-child { white-space: nowrap; }
 
 # 选题背景：为什么要“小卫星群 + 调度”
 
-<div class="grid grid-cols-3 gap-5 mt-6 text-sm">
+<div class="grid grid-cols-3 gap-4 mt-4 text-[0.82rem]">
 
-<div class="p-4 border rounded">
+<div class="p-3 border rounded">
 
 **低频射电的物理需求**
 
@@ -104,19 +131,19 @@ table th:first-child, table td:first-child { white-space: nowrap; }
 
 </div>
 
-<div class="mt-4 p-4 border-l-4 border-teal-600 bg-teal-50 text-sm">
+<div class="mt-3 p-3 border-l-4 border-teal-600 bg-teal-50 text-[0.82rem]">
 
 **可拓展性**：多颗卫星组成的卫星群在调度算法上有很大的设计空间——可以把成像采样质量（uv 覆盖、PSF）作为奖励，用强化学习去优化阵列构型与观测编排。
 
 </div>
 
-<div class="mt-3 p-4 rounded bg-slate-100 text-sm">
+<div class="mt-3 p-3 rounded bg-slate-100 text-[0.82rem]">
 
 本课题不追求真实的轨道动力学与全链路成像，而是把“**分布式调度机制**”做成可运行、可复现、可观测的原型：三颗主星 + 九颗小卫星，运行在本地 Kubernetes 集群上。
 
 </div>
 
-<div class="tiny mt-3">参考：LOFAR 的低频阵列设计与 SKA 的科学目标，见文末文献 [1][3]。</div>
+<div class="tiny mt-2">参考：LOFAR 的低频阵列设计与 SKA 的科学目标，见文末文献 [1][3]。</div>
 
 ---
 
@@ -162,6 +189,74 @@ table th:first-child, table td:first-child { white-space: nowrap; }
 - 测试三条线：常规功能切换、事件触发、主星与子星故障
 - 可视化三件事：调度终端面板、阵列可视、输入输出响应
 - 拓展设想：增加子星数量、引入 AI 辅助调度
+
+</div>
+
+</div>
+
+---
+
+# 前期工作：六星编队的成像仿真
+
+<div class="grid grid-cols-2 gap-4 mt-1">
+
+<figure>
+<img src="/img/imaging/fig_uv_coverage.png" class="w-full rounded border border-slate-300" />
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">10 个轨道周期的 uv 覆盖：左 10 MHz，右 40 MHz，轨迹自然填充成环带。</figcaption>
+</figure>
+
+<figure>
+<img src="/img/imaging/fig_rime_image.png" class="w-full rounded border border-slate-300" />
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">RIME 可见度仿真与脏图：四个输入源都回到正确位置。</figcaption>
+</figure>
+
+</div>
+
+<div class="grid grid-cols-3 gap-4 mt-2 text-xs text-slate-600">
+
+<div><b>构型</b>：6 星（1 主 5 从），Callisto 500 km 极轨，10 轨内基线 109–1982 km。</div>
+
+<div><b>分辨率</b>：10 MHz 约 2.48″，40 MHz 约 0.62″。</div>
+
+<div><b>结果</b>：峰值恢复约 80%，损失主要来自 uv 中心空洞的短基线缺失。</div>
+
+</div>
+
+---
+
+<div class="absolute inset-0 flex items-center justify-center bg-white">
+  <img src="/img/imaging/fig_4tool_compare.png" class="max-w-full max-h-full object-contain" />
+</div>
+
+<!--
+RIME：4 个源位置正确，峰值恢复约 80%。
+OSKAR：120 个随机快照联合成像，恢复率 75%，与短基线缺失一致。
+pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道生成 FITS-IDI。
+附带结论：均匀快照会产生规则栅瓣，随机化观测时刻后消除，已写回阵列设计。
+-->
+
+---
+
+# 前期工作：CASA 端到端成像
+
+<div class="grid grid-cols-5 gap-5 mt-1">
+
+<div class="col-span-3">
+<img src="/img/imaging/fig_casa_image.png" class="w-full rounded border border-slate-300" />
+<div class="tiny mt-2">左：脏图；右：Högbom 清洗后。红圈为注入源的真值位置。</div>
+</div>
+
+<div class="col-span-2 text-sm">
+
+**定量结果**
+
+- 四个源位置误差 ≤ 0.6″（约四分之一合成波束）
+- 流量恢复率 99.3%–99.9%
+- 角域动态范围约 1490
+
+**与本课题的关系**
+
+前期工作验证了“阵列几何 → 可见度 → 成像”的正向链路；本课题补上调度、故障与重构这一层，让阵列在运行中始终可成像。
 
 </div>
 
@@ -299,12 +394,12 @@ K3s 默认用 SQLite（kine），不需要单独部署 etcd。
 
 <figure>
 <img src="/img/headlamp/00-map-home.png" class="w-full rounded border border-slate-300" />
-<figcaption>Map 视图按 Namespace 分组：multi-star 下是 small-sat、main-sat 与 dashboard。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">Map 视图按 Namespace 分组：multi-star 下是 small-sat、main-sat 与 dashboard。</figcaption>
 </figure>
 
 <figure>
 <img src="/img/headlamp/04-pods.png" class="w-full rounded border border-slate-300" />
-<figcaption>Namespace 之下的 Pod 列表：3 主星、9 小星、1 面板代理。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">Namespace 之下的 Pod 列表：3 主星、9 小星、1 面板代理。</figcaption>
 </figure>
 
 </div>
@@ -333,7 +428,7 @@ K3s 默认用 SQLite（kine），不需要单独部署 etcd。
 
 <figure>
 <img src="/img/headlamp/09-small-sat-container.png" class="w-full rounded border border-slate-300" />
-<figcaption>小星容器：镜像 <code>multi-star-satellite:0.2.0</code>，环境变量注入身份与容量。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">小星容器：镜像 <code>multi-star-satellite:0.2.0</code>，环境变量注入身份与容量。</figcaption>
 </figure>
 
 </div>
@@ -385,8 +480,10 @@ Lease 决定唯一主控；epoch 单调递增，旧主控命令被拒绝；comma
 </div>
 
 <!--
-操作流：打开面板 → 选择目标 → 选择操作 → 页面内二次确认（15 s）→ 主控校验 → 下发命令 → 快照刷新 → 反馈与审计。
-一致性：command_id 幂等、epoch 围栏、plan_version 只增不减。
+操作流分四支：A 主控暂停（二次确认→停止续约→租约过期→接管 epoch+1）；
+B 小星注入/恢复（二次确认→FAILED→plan+1→恢复后重新纳入）；
+C 事件提交（单次点击→去重→FIXED_SOURCE）；D 模式切换（前置校验→plan+1）。
+四支最后都汇合到 1 s 快照刷新、结果核对与审计追溯。
 -->
 
 ---
@@ -417,74 +514,6 @@ Lease 决定唯一主控；epoch 单调递增，旧主控命令被拒绝；comma
 <div><b>uv 覆盖</b>：远场采样加共轭点，中心空洞与最大半径决定分辨率。</div>
 
 <div><b>PSF</b>：dirty beam 的峰值旁瓣与 FWHM，用于比较不同构型。</div>
-
-</div>
-
----
-
-# 前期工作：六星编队的成像仿真
-
-<div class="grid grid-cols-2 gap-4 mt-1">
-
-<figure>
-<img src="/img/imaging/fig_uv_coverage.png" class="w-full rounded border border-slate-300" />
-<figcaption>10 个轨道周期的 uv 覆盖：左 10 MHz，右 40 MHz，轨迹自然填充成环带。</figcaption>
-</figure>
-
-<figure>
-<img src="/img/imaging/fig_rime_image.png" class="w-full rounded border border-slate-300" />
-<figcaption>RIME 可见度仿真与脏图：四个输入源都回到正确位置。</figcaption>
-</figure>
-
-</div>
-
-<div class="grid grid-cols-3 gap-4 mt-2 text-xs text-slate-600">
-
-<div><b>构型</b>：6 星（1 主 5 从），Callisto 500 km 极轨，10 轨内基线 109–1982 km。</div>
-
-<div><b>分辨率</b>：10 MHz 约 2.48″，40 MHz 约 0.62″。</div>
-
-<div><b>结果</b>：峰值恢复约 80%，损失主要来自 uv 中心空洞的短基线缺失。</div>
-
-</div>
-
----
-
-<div class="absolute inset-0 flex items-center justify-center bg-white">
-  <img src="/img/imaging/fig_4tool_compare.png" class="max-w-full max-h-full object-contain" />
-</div>
-
-<!--
-RIME：4 个源位置正确，峰值恢复约 80%。
-OSKAR：120 个随机快照联合成像，恢复率 75%，与短基线缺失一致。
-pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道生成 FITS-IDI。
-附带结论：均匀快照会产生规则栅瓣，随机化观测时刻后消除，已写回阵列设计。
--->
-
----
-
-# 前期工作：CASA 端到端成像
-
-<div class="grid grid-cols-5 gap-5 mt-1">
-
-<div class="col-span-3">
-<img src="/img/imaging/fig_casa_image.png" class="w-full rounded border border-slate-300" />
-<div class="tiny mt-2">左：脏图；右：Högbom 清洗后。红圈为注入源的真值位置。</div>
-</div>
-
-<div class="col-span-2 text-sm">
-
-**定量结果**
-
-- 四个源位置误差 ≤ 0.6″（约四分之一合成波束）
-- 流量恢复率 99.3%–99.9%
-- 角域动态范围约 1490
-
-**与本课题的关系**
-
-前期工作验证了“阵列几何 → 可见度 → 成像”的正向链路；本课题补上调度、故障与重构这一层，让阵列在运行中始终可成像。
-
-</div>
 
 </div>
 
@@ -535,12 +564,12 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 <figure>
 <img src="/img/panel/01-initial.png" class="w-full rounded border border-slate-300" />
-<figcaption>切换前：主控 main-sat-0，epoch 16，plan 161。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">切换前：主控 main-sat-0，epoch 16，plan 161。</figcaption>
 </figure>
 
 <figure>
 <img src="/img/panel/02-failover-after.png" class="w-full rounded border border-slate-300" />
-<figcaption>切换后：主控 main-sat-1，epoch 17，plan 161；旧主恢复后不再抢回。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">切换后：主控 main-sat-1，epoch 17，plan 161；旧主恢复后不再抢回。</figcaption>
 </figure>
 
 </div>
@@ -603,12 +632,12 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 <figure>
 <img src="/img/panel/04-fault-armed.png" class="w-full rounded border border-slate-300" />
-<figcaption>页面内二次确认：按钮变为“再次点击确认：注入故障”，15 s 内有效。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">页面内二次确认：按钮变为“再次点击确认：注入故障”，15 s 内有效。</figcaption>
 </figure>
 
 <figure>
 <img src="/img/panel/05-fault-result.png" class="w-full rounded border border-slate-300" />
-<figcaption>注入结果：健康 failed、基线 36→28；状态区只显示关键字段。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">注入结果：健康 failed、基线 36→28；状态区只显示关键字段。</figcaption>
 </figure>
 
 </div>
@@ -627,12 +656,12 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 <figure>
 <img src="/img/panel/06-fault-array.png" class="w-full rounded border border-slate-300" />
-<figcaption>故障态：9 颗在编，健康 8；UV 采样 28 点 + 28 共轭。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">故障态：9 颗在编，健康 8；UV 采样 28 点 + 28 共轭。</figcaption>
 </figure>
 
 <figure>
 <img src="/img/panel/07-fault-recovered.png" class="w-full rounded border border-slate-300" />
-<figcaption>恢复后：健康 9，基线回到 36；恢复不改写历史任务。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">恢复后：健康 9，基线回到 36；恢复不改写历史任务。</figcaption>
 </figure>
 
 </div>
@@ -669,12 +698,12 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 <figure>
 <img src="/img/panel/08-event-submit.png" class="w-full rounded border border-slate-300" />
-<figcaption>提交事件：频率 110 MHz、通量 18 Jy、谱指数 −0.7，请求已接受。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">提交事件：频率 110 MHz、通量 18 Jy、谱指数 −0.7，请求已接受。</figcaption>
 </figure>
 
 <figure>
 <img src="/img/panel/09-fixed-source.png" class="w-full rounded border border-slate-300" />
-<figcaption>模式自动进入 FIXED_SOURCE，生成新计划版本。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">模式自动进入 FIXED_SOURCE，生成新计划版本。</figcaption>
 </figure>
 
 </div>
@@ -711,12 +740,12 @@ pyuvsim：归一化通过、保持相位闭合；OmniUV：真实开普勒轨道�
 
 <figure>
 <img src="/img/panel/10-calibration.png" class="w-full rounded border border-slate-300" />
-<figcaption>切换到 CALIBRATION：标定任务替换巡天任务，plan 166→167。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">切换到 CALIBRATION：标定任务替换巡天任务，plan 166→167。</figcaption>
 </figure>
 
 <figure>
 <img src="/img/panel/11-mode-sequence.png" class="w-full rounded border border-slate-300" />
-<figcaption>审计序列：event accepted → FIXED_SOURCE → CALIBRATION → SURVEY，版本逐次递增。</figcaption>
+<figcaption class="text-[0.72rem] leading-snug text-slate-500 mt-1">审计序列：event accepted → FIXED_SOURCE → CALIBRATION → SURVEY，版本逐次递增。</figcaption>
 </figure>
 
 </div>
